@@ -27,6 +27,47 @@
       letter-spacing: 4px;
       text-shadow: 0 0 12px #e50914;
     }
+
+    /* NOVOS ESTILOS */
+    #search-container {
+      max-width: 400px;
+      margin: 0 auto 30px auto;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    #search-input {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: none;
+      outline: none;
+    }
+    #search-btn {
+      background-color: #e50914;
+      border: none;
+      padding: 8px 15px;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    #search-btn:hover {
+      background-color: #b00710;
+    }
+
+    #counter {
+      text-align: center;
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      color: #e50914;
+      text-shadow: 0 0 6px #e50914;
+      user-select: none;
+    }
+
+    /* RESTANTE DO CSS EXISTENTE */
     .anime-list {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -144,52 +185,77 @@
 
   <h1>Lista de Animes</h1>
 
+  <!-- Campo de pesquisa por ID -->
+  <div id="search-container">
+    <input type="text" id="search-input" placeholder="Pesquisar por ID do anime..." />
+    <button id="search-btn">Buscar</button>
+    <button id="clear-btn" title="Mostrar todos">Limpar</button>
+  </div>
+
+  <!-- Contador de animes carregados -->
+  <div id="counter"></div>
+
   <div id="loading">Carregando animes...</div>
   <div id="anime-list"></div>
 
   <script>
+    let animesData = [];
+
+    function criarCardAnime(anime) {
+      const card = document.createElement('div');
+      card.className = 'anime-card';
+
+      const img = document.createElement('img');
+      img.src = anime.capa || 'https://via.placeholder.com/140x210?text=Sem+Imagem';
+      img.alt = anime.nome;
+
+      const info = document.createElement('div');
+      info.className = 'anime-info';
+
+      const title = document.createElement('div');
+      title.className = 'anime-title';
+      title.textContent = anime.nome;
+
+      const status = document.createElement('div');
+      status.className = 'anime-status';
+      status.textContent = anime.status || '';
+
+      const genre = document.createElement('div');
+      genre.className = 'anime-genre';
+      genre.textContent = anime.genero || '';
+
+      info.appendChild(title);
+      info.appendChild(status);
+      info.appendChild(genre);
+
+      card.appendChild(img);
+      card.appendChild(info);
+
+      return card;
+    }
+
+    function mostrarAnimes(lista) {
+      const listEl = document.getElementById('anime-list');
+      listEl.innerHTML = ''; // limpa a lista antes de renderizar
+      lista.forEach(anime => {
+        const card = criarCardAnime(anime);
+        listEl.appendChild(card);
+      });
+      // Atualiza contador
+      const counterEl = document.getElementById('counter');
+      counterEl.textContent = `Animes exibidos: ${lista.length}`;
+    }
+
     async function fetchAnimes() {
       try {
         const res = await fetch('https://anime-aniverso.vercel.app/animes.json');
         if (!res.ok) throw new Error('Erro ao buscar dados');
-        const animes = await res.json();
+        animesData = await res.json();
 
         const loadingEl = document.getElementById('loading');
-        const listEl = document.getElementById('anime-list');
         loadingEl.style.display = 'none';
 
-        animes.forEach(anime => {
-          const card = document.createElement('div');
-          card.className = 'anime-card';
-
-          const img = document.createElement('img');
-          img.src = anime.capa || 'https://via.placeholder.com/140x210?text=Sem+Imagem';
-          img.alt = anime.nome;
-
-          const info = document.createElement('div');
-          info.className = 'anime-info';
-
-          const title = document.createElement('div');
-          title.className = 'anime-title';
-          title.textContent = anime.nome;
-
-          const status = document.createElement('div');
-          status.className = 'anime-status';
-          status.textContent = anime.status || '';
-
-          const genre = document.createElement('div');
-          genre.className = 'anime-genre';
-          genre.textContent = anime.genero || '';
-
-          info.appendChild(title);
-          info.appendChild(status);
-          info.appendChild(genre);
-
-          card.appendChild(img);
-          card.appendChild(info);
-
-          listEl.appendChild(card);
-        });
+        mostrarAnimes(animesData);
 
       } catch (e) {
         const loadingEl = document.getElementById('loading');
@@ -197,6 +263,37 @@
         console.error(e);
       }
     }
+
+    function filtrarPorID(idBusca) {
+      const busca = idBusca.trim().toLowerCase();
+      if (!busca) {
+        mostrarAnimes(animesData);
+        return;
+      }
+      // Filtra animes cujo id contenha o termo buscado (partial match)
+      const filtrados = animesData.filter(anime => {
+        return String(anime.id).toLowerCase().includes(busca);
+      });
+      mostrarAnimes(filtrados);
+    }
+
+    // Eventos dos botões
+    document.getElementById('search-btn').addEventListener('click', () => {
+      const input = document.getElementById('search-input');
+      filtrarPorID(input.value);
+    });
+
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      document.getElementById('search-input').value = '';
+      mostrarAnimes(animesData);
+    });
+
+    // Permite pesquisar também ao pressionar Enter
+    document.getElementById('search-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        filtrarPorID(e.target.value);
+      }
+    });
 
     fetchAnimes();
   </script>
