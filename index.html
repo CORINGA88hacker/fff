@@ -1,91 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Lista de Animes - API Aniverso</title>
-  <style>
-    body {
-      background: #121212;
-      color: #eee;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      color: #f44336;
-    }
-    .anime-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill,minmax(180px,1fr));
-      gap: 20px;
-      margin-top: 30px;
-    }
-    .anime-card {
-      background: #222;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 0 10px #f44336aa;
-      transition: transform 0.2s;
-    }
-    .anime-card:hover {
-      transform: scale(1.05);
-    }
-    .anime-card img {
-      width: 100%;
-      height: 250px;
-      object-fit: contain;
-      background: #111;
-    }
-    .anime-info {
-      padding: 10px;
-    }
-    .anime-info h3 {
-      margin: 0 0 5px;
-      color: #f44336;
-    }
-    .anime-info small {
-      color: #ccc;
-      display: block;
-      margin-bottom: 5px;
-    }
-    .anime-info span {
-      color: #ffeb3b;
-      font-weight: bold;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Animes</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <h1>Lista de Animes - API Aniverso</h1>
-  <div class="anime-list" id="animeList"></div>
-
-  <!-- Carrega o arquivo JS da API que cria a variável global "animes" -->
-  <script src="https://api-anime-aniverso.vercel.app/animes.js"></script>
-
-  <script>
-    window.onload = () => {
-      if (!window.animes || !Array.isArray(window.animes)) {
-        document.getElementById('animeList').innerHTML = "<p>Erro: variável 'animes' não carregada.</p>";
-        return;
-      }
-
-      const container = document.getElementById('animeList');
-
-      window.animes.forEach(anime => {
-        const card = document.createElement('div');
-        card.className = 'anime-card';
-        card.innerHTML = `
-          <img src="${anime.capa}" alt="Capa do anime ${anime.nome}" />
-          <div class="anime-info">
-            <h3>${anime.nome}</h3>
-            <small>Data: ${anime.data}</small>
-            <span>Avaliação: ${anime.avaliacao}</span>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    };
-  </script>
-
+  <header>
+    <h1>Lista de Animes</h1>
+  </header>
+  <main>
+    <div id="anime-list" class="anime-list"></div>
+  </main>
+  <footer>
+    <p>Desenvolvido por Maninho</p>
+  </footer>
+  <script src="script.js"></script>
 </body>
 </html>
