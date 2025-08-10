@@ -5,60 +5,155 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Lista de Animes</title>
   <style>
+    /* Reset básico */
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: #eee;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      color: #f0e9f0;
       margin: 0;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-      color: #ff4500;
-    }
-    .anime-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .anime-card {
-      background: #1e1e1e;
-      border-radius: 8px;
-      padding: 15px;
-      box-shadow: 0 0 8px rgba(255, 69, 0, 0.4);
+      padding: 0 20px 40px;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      align-items: center;
     }
-    .anime-card img {
-      max-width: 100%;
-      border-radius: 6px;
-      object-fit: cover;
-    }
-    .anime-title {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #ff7f50;
-    }
-    .anime-info {
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-    .loading {
+
+    header {
+      width: 100%;
+      background-color: rgba(33, 30, 45, 0.9);
+      padding: 25px 0;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 100;
       text-align: center;
-      font-size: 1.2rem;
-      margin-top: 50px;
-      color: #ff4500;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.8rem;
+      color: #ff6f61;
+      letter-spacing: 3px;
+      text-shadow: 1px 1px 5px #ff6f61;
+      font-weight: 900;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    #loading {
+      margin-top: 60px;
+      font-size: 1.5rem;
+      color: #ff6f61;
+      text-shadow: 0 0 8px #ff6f61;
+    }
+
+    .anime-list {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 30px;
+      width: 100%;
+      max-width: 1200px;
+    }
+
+    .anime-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      box-shadow:
+        0 4px 6px rgba(0,0,0,0.4),
+        inset 0 0 40px rgba(255,111,97,0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+    }
+    .anime-card:hover {
+      transform: translateY(-8px);
+      box-shadow:
+        0 10px 20px rgba(255,111,97,0.8),
+        inset 0 0 60px rgba(255,111,97,0.6);
+    }
+
+    .anime-card img {
+      width: 100%;
+      height: 420px;
+      object-fit: cover;
+      border-bottom: 3px solid #ff6f61;
+      transition: filter 0.3s ease;
+    }
+    .anime-card:hover img {
+      filter: brightness(1.1);
+    }
+
+    .anime-content {
+      padding: 20px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .anime-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #ffdede;
+      text-shadow: 1px 1px 4px #ff6f61;
+    }
+
+    .anime-info {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      color: #ffdad3;
+    }
+
+    .anime-info strong {
+      color: #ff8c80;
+    }
+
+    .anime-desc {
+      font-size: 0.9rem;
+      color: #ffe5e0;
+      line-height: 1.5;
+      text-align: justify;
+      max-height: 110px;
+      overflow: hidden;
+      position: relative;
+      padding-right: 10px;
+    }
+    .anime-desc::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 40px;
+      height: 25px;
+      background: linear-gradient(to right, transparent, rgba(18, 12, 32, 0.8));
+    }
+
+    @media (max-width: 400px) {
+      .anime-card img {
+        height: 300px;
+      }
+      .anime-title {
+        font-size: 1.3rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Lista de Animes</h1>
-  <div id="loading" class="loading">Carregando animes...</div>
-  <div id="anime-list" class="anime-list"></div>
+
+  <header>
+    <h1>Lista de Animes</h1>
+  </header>
+
+  <div id="loading">Carregando animes...</div>
+  <div id="anime-list"></div>
 
   <script>
     async function fetchAnimes() {
@@ -66,48 +161,54 @@
         const res = await fetch('https://anime-aniverso.vercel.app/animes.json');
         if (!res.ok) throw new Error('Erro ao buscar dados');
         const animes = await res.json();
-        
-        const listEl = document.getElementById('anime-list');
+
         const loadingEl = document.getElementById('loading');
+        const listEl = document.getElementById('anime-list');
         loadingEl.style.display = 'none';
 
         animes.forEach(anime => {
           const card = document.createElement('div');
           card.className = 'anime-card';
 
-          // imagem - se existir a url de imagem
           const img = document.createElement('img');
-          img.src = anime.image || 'https://via.placeholder.com/300x400?text=Sem+Imagem';
-          img.alt = anime.title;
+          img.src = anime.capa || 'https://via.placeholder.com/300x420?text=Sem+Imagem';
+          img.alt = anime.nome;
 
-          // título
+          const content = document.createElement('div');
+          content.className = 'anime-content';
+
           const title = document.createElement('div');
           title.className = 'anime-title';
-          title.textContent = anime.title;
+          title.textContent = anime.nome;
 
-          // info adicional
           const info = document.createElement('div');
           info.className = 'anime-info';
           info.innerHTML = `
-            <strong>Gênero:</strong> ${anime.genre || '-'}<br />
-            <strong>Estúdio:</strong> ${anime.studio || '-'}<br />
-            <strong>Ano:</strong> ${anime.year || '-'}<br />
-            <strong>Nota:</strong> ${anime.score || '-'}<br />
-            <strong>Tipo:</strong> ${anime.type || '-'}<br />
-            <strong>Status:</strong> ${anime.status || '-'}
+            <strong>Gênero:</strong> ${anime.genero || '-'}<br>
+            <strong>Ano:</strong> ${anime.ano || '-'}<br>
+            <strong>Status:</strong> ${anime.status || '-'}<br>
+            <strong>Duração:</strong> ${anime.duracao_episodio || '-'} min<br>
+            <strong>Qualidade:</strong> ${anime.qualidade || '-'}
           `;
 
+          const desc = document.createElement('div');
+          desc.className = 'anime-desc';
+          desc.textContent = anime.descricao || '-';
+
+          content.appendChild(title);
+          content.appendChild(info);
+          content.appendChild(desc);
+
           card.appendChild(img);
-          card.appendChild(title);
-          card.appendChild(info);
+          card.appendChild(content);
 
           listEl.appendChild(card);
         });
 
-      } catch (error) {
+      } catch (e) {
         const loadingEl = document.getElementById('loading');
         loadingEl.textContent = 'Erro ao carregar animes.';
-        console.error(error);
+        console.error(e);
       }
     }
 
