@@ -1,21 +1,117 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Lista de Animes</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #ff4500;
+    }
+    .anime-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .anime-card {
+      background: #1e1e1e;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 0 8px rgba(255, 69, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .anime-card img {
+      max-width: 100%;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+    .anime-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #ff7f50;
+    }
+    .anime-info {
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .loading {
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: 50px;
+      color: #ff4500;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Lista de Animes</h1>
-  </header>
-  <main>
-    <div id="anime-list" class="anime-list"></div>
-  </main>
-  <footer>
-    <p>Desenvolvido por Maninho</p>
-  </footer>
-  <script src="script.js"></script>
+  <h1>Lista de Animes</h1>
+  <div id="loading" class="loading">Carregando animes...</div>
+  <div id="anime-list" class="anime-list"></div>
+
+  <script>
+    async function fetchAnimes() {
+      try {
+        const res = await fetch('https://anime-aniverso.vercel.app/animes.json');
+        if (!res.ok) throw new Error('Erro ao buscar dados');
+        const animes = await res.json();
+        
+        const listEl = document.getElementById('anime-list');
+        const loadingEl = document.getElementById('loading');
+        loadingEl.style.display = 'none';
+
+        animes.forEach(anime => {
+          const card = document.createElement('div');
+          card.className = 'anime-card';
+
+          // imagem - se existir a url de imagem
+          const img = document.createElement('img');
+          img.src = anime.image || 'https://via.placeholder.com/300x400?text=Sem+Imagem';
+          img.alt = anime.title;
+
+          // título
+          const title = document.createElement('div');
+          title.className = 'anime-title';
+          title.textContent = anime.title;
+
+          // info adicional
+          const info = document.createElement('div');
+          info.className = 'anime-info';
+          info.innerHTML = `
+            <strong>Gênero:</strong> ${anime.genre || '-'}<br />
+            <strong>Estúdio:</strong> ${anime.studio || '-'}<br />
+            <strong>Ano:</strong> ${anime.year || '-'}<br />
+            <strong>Nota:</strong> ${anime.score || '-'}<br />
+            <strong>Tipo:</strong> ${anime.type || '-'}<br />
+            <strong>Status:</strong> ${anime.status || '-'}
+          `;
+
+          card.appendChild(img);
+          card.appendChild(title);
+          card.appendChild(info);
+
+          listEl.appendChild(card);
+        });
+
+      } catch (error) {
+        const loadingEl = document.getElementById('loading');
+        loadingEl.textContent = 'Erro ao carregar animes.';
+        console.error(error);
+      }
+    }
+
+    fetchAnimes();
+  </script>
 </body>
 </html>
