@@ -59,28 +59,36 @@
   <h1>Lista de Animes - API Aniverso</h1>
   <div class="anime-list" id="animeList"></div>
 
-  <script type="module">
-    import { animes } from 'https://api-anime-aniverso.vercel.app/animes.js';
+  <!-- Aqui carregamos o script que cria a variável global "animes" -->
+  <script src="https://api-anime-aniverso.vercel.app/animes.js"></script>
 
-    const container = document.getElementById('animeList');
+  <script>
+    // Espera o carregamento do script para garantir que 'animes' existe
+    window.onload = () => {
+      const container = document.getElementById('animeList');
 
-    animes.forEach(anime => {
-      // A API usa 'dados' em vez de 'data' e tem 'avaliacao' ou 'avaliação', então bora padronizar:
-      const data = anime.data || anime.dados || 'N/A';
-      const avaliacao = anime.avaliacao || anime['avaliação'] || 'N/A';
+      if (!window.animes || !Array.isArray(window.animes)) {
+        container.innerHTML = '<p>Erro: lista de animes não carregada.</p>';
+        return;
+      }
 
-      const card = document.createElement('div');
-      card.className = 'anime-card';
-      card.innerHTML = `
-        <img src="${anime.capa}" alt="Capa do anime ${anime.nome}" />
-        <div class="anime-info">
-          <h3>${anime.nome}</h3>
-          <small>Data: ${data}</small>
-          <span>Avaliação: ${avaliacao}</span>
-        </div>
-      `;
-      container.appendChild(card);
-    });
+      window.animes.forEach(anime => {
+        const data = anime.data || anime.dados || 'N/A';
+        const avaliacao = anime.avaliacao || anime['avaliação'] || 'N/A';
+
+        const card = document.createElement('div');
+        card.className = 'anime-card';
+        card.innerHTML = `
+          <img src="${anime.capa}" alt="Capa do anime ${anime.nome}" />
+          <div class="anime-info">
+            <h3>${anime.nome}</h3>
+            <small>Data: ${data}</small>
+            <span>Avaliação: ${avaliacao}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    };
   </script>
 
 </body>
