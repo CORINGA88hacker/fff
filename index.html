@@ -28,7 +28,6 @@
       text-shadow: 0 0 12px #e50914;
     }
 
-    /* NOVOS ESTILOS */
     #search-container {
       max-width: 400px;
       margin: 0 auto 30px auto;
@@ -57,6 +56,19 @@
     #search-btn:hover {
       background-color: #b00710;
     }
+    #clear-btn {
+      background-color: #444;
+      border: none;
+      padding: 8px 15px;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+    #clear-btn:hover {
+      background-color: #666;
+    }
 
     #counter {
       text-align: center;
@@ -67,19 +79,20 @@
       user-select: none;
     }
 
-    /* RESTANTE DO CSS EXISTENTE */
+    /* FLEXBOX PARA OS CARDS */
     .anime-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px 10px;
       max-width: 1400px;
       margin: 0 auto;
-      justify-items: center; /* centraliza os cards na grid */
     }
     .anime-card {
+      flex: 0 0 140px; /* largura fixa para os cards */
       display: flex;
       flex-direction: column;
-      align-items: center; /* centraliza conteúdo horizontalmente */
+      align-items: center;
       cursor: pointer;
       transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
                   box-shadow 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -87,7 +100,6 @@
       position: relative;
       border-radius: 6px;
       overflow: hidden;
-      width: 140px; /* largura fixa do card igual a da imagem */
     }
     .anime-card:hover {
       transform: scale(1.12);
@@ -98,9 +110,9 @@
       border-radius: 10px;
     }
     .anime-card img {
-      width: 140px;       /* largura fixa */
-      height: 210px;      /* altura fixa */
-      object-fit: cover;  /* mantém proporção e corta o excesso */
+      width: 140px;
+      height: 210px;
+      object-fit: cover;
       border-radius: 6px;
       display: block;
       pointer-events: none;
@@ -158,11 +170,10 @@
         margin-bottom: 30px;
       }
       .anime-list {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 15px;
+        gap: 12px 8px;
       }
       .anime-card {
-        width: 120px;
+        flex: 0 0 120px;
       }
       .anime-card img {
         width: 120px;
