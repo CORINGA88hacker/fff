@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerador JSON Episódios TMDb</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #eee;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 {
+      color: #ff4e00;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    form {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+      color: #ffa64d;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: none;
+      font-size: 1rem;
+      background: #333;
+      color: #eee;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #ff4e00;
+      border: none;
+      padding: 12px 20px;
+      color: white;
+      font-weight: bold;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+    }
+    #copyBtn {
+      background-color: #4caf50;
+      margin-top: 10px;
+      width: auto;
+      padding: 10px 18px;
+      font-size: 1rem;
+    }
+    pre {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      overflow-x: auto;
+      max-height: 460px;
+      color: #0f0;
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-top: 10px;
+    }
+    .error {
+      color: #f55;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    #copyFeedback {
+      color: #4caf50;
+      margin-top: 10px;
+      font-weight: bold;
+      display: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gerador JSON Episódios TMDb</h1>
+
+  <form id="form">
+    <label for="tmdbId">Digite o TMDb ID da série/anime:</label>
+    <input type="text" id="tmdbId" placeholder="ex: 94664" required />
+
+    <label for="language">Idioma da busca:</label>
+    <select id="language">
+      <option value="pt-BR">pt-BR</option>
+      <option value="en-US">en-US</option>
+    </select>
+
+    <button type="button" id="btnFetch">Gerar JSON dos Episódios</button>
+  </form>
+
+  <div id="errorMsg" class="error"></div>
+  <pre id="jsonOutput"></pre>
+  <button id="copyBtn" style="display:none;">Copiar JSON</button>
+  <div id="copyFeedback">JSON copiado para a área de transferência!</div>
+
+  <script>
+    const TMDB_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiZjZhMGEzMjhmOWY2NzY5MzZmNDBiZjRmYmIyY2U5YSIsIm5iZiI6MTY4MjcwODQzNi44NTY5OTk5LCJzdWIiOiI2NDRjMTdkNDUxYTY0ZTA4OGFkZDY4MmEiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.k4rE_75eOyG6BWcYCAa2sbcGHVpsX9UTH4Y5NVoQ0L4";
+
+    const errorMsg = document.getElementById('errorMsg');
+    const output = document.getElementById('jsonOutput');
+    const tmdbInput = document.getElementById('tmdbId');
+    const langSelect = document.getElementById('language');
+    const btnFetch = document.getElementById('btnFetch');
+    const copyBtn = document.getElementById('copyBtn');
+    const copyFeedback = document.getElementById('copyFeedback');
+
+    async function fetchJSON(url) {
+      const res = await fetch(url, {
+        headers: { Authorization: "Bearer " + TMDB_TOKEN }
+      });
+      if (!res.ok) throw new Error(`Erro na requisição: ${res.status}`);
+      return res.json();
+    }
+
+    async function fetchSerie(tmdbId, lang) {
+      return fetchJSON(`https://api.themoviedb.org/3/tv/${tmdbId}?language=${lang}`);
+    }
+
+    async function fetchTemporada(tmdbId, seasonNumber, lang) {
+      return fetchJSON(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${seasonNumber}?language=${lang}`);
+    }
+
+    btnFetch.addEventListener('click', async () => {
+      errorMsg.textContent = "";
+      output.textContent = "";
+      copyBtn.style.display = "none";
+      copyFeedback.style.display = "none";
+
+      const tmdbId = tmdbInput.value.trim();
+      if (!tmdbId) {
+        errorMsg.textContent = "Por favor, insira o TMDb ID da série.";
+        return;
+      }
+      const lang = langSelect.value;
+
+      try {
+        const serie = await fetchSerie(tmdbId, lang);
+        if (!serie.seasons || serie.seasons.length === 0) {
+          errorMsg.textContent = "Nenhuma temporada encontrada para essa série.";
+          return;
+        }
+
+        const episodiosTodos = [];
+
+        for (const temporada of serie.seasons) {
+          if (temporada.season_number === 0) continue;
+
+          const detalhes = await fetchTemporada(tmdbId, temporada.season_number, lang);
+          const epRunTime = serie.episode_run_time && serie.episode_run_time.length > 0 ? serie.episode_run_time[0].toString() : "";
+
+          for (const ep of detalhes.episodes) {
+            episodiosTodos.push({
+              id: `${tmdbId}-${temporada.season_number}-${ep.episode_number}`,
+              nome: ep.name || "",
+              numero: ep.episode_number,
+              descricao: ep.overview || "",
+              duracao: ep.runtime?.toString() || epRunTime,
+              data_lancamento: ep.air_date || "",
+              thumbnail: ep.still_path ? `https://image.tmdb.org/t/p/w500${ep.still_path}` : "",
+              temporada_id: `${tmdbId}-${temporada.season_number}`,
+              legendado: "",
+              dublado: "",
+              tmdb_id: `${tmdbId}-${temporada.season_number}-${ep.episode_number}`,
+              data_criacao: ep.air_date ? new Date(ep.air_date).toISOString() : "",
+              data_atualizacao: new Date().toISOString(),
+              comeco: "",
+              final: ""
+            });
+          }
+        }
+
+        output.textContent = JSON.stringify(episodiosTodos, null, 2);
+        copyBtn.style.display = "inline-block";
+      } catch (e) {
+        errorMsg.textContent = e.message;
+      }
+    });
+
+    copyBtn.addEventListener('click', () => {
+      const jsonText = output.textContent;
+      if (!jsonText) return;
+      navigator.clipboard.writeText(jsonText).then(() => {
+        copyFeedback.style.display = "block";
+        setTimeout(() => {
+          copyFeedback.style.display = "none";
+        }, 2000);
+      });
+    });
+  </script>
+</body>
+</html>
