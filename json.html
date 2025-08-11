@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gerador JSON TMDb - PT-BR</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #eee;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 {
+      color: #ff4e00;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    form {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+      color: #ffa64d;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: none;
+      font-size: 1rem;
+      background: #333;
+      color: #eee;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #ff4e00;
+      border: none;
+      padding: 12px 20px;
+      color: white;
+      font-weight: bold;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #e04300;
+    }
+    pre {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      overflow-x: auto;
+      max-height: 460px;
+      color: #0f0;
+      font-family: 'Courier New', Courier, monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .error {
+      color: #f55;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    .hint {
+      color: #aaa;
+      font-size: 0.9rem;
+      margin-top: 6px;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+    }
+    .col {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gerador JSON TMDb (PT-BR)</h1>
+
+  <form id="tmdbForm">
+    <label for="tmdbId">Digite o TMDb ID da série/anime/filme:</label>
+    <input type="text" id="tmdbId" name="tmdbId" placeholder="ex: 11061 (ou 1399) — apenas o número" required />
+    <div class="hint">Aceita apenas o TMDb ID numérico. Se quiser múltiplos, separe por vírgula (ex: 11061,1399) — veja nota abaixo.</div>
+
+    <div style="margin-top:12px" class="row">
+      <div class="col">
+        <label for="autoDownload">Baixar automaticamente</label>
+        <select id="autoDownload" style="padding:8px; border-radius:5px; background:#333; color:#eee; border:none;">
+          <option value="single">Baixar JSON único</option>
+          <option value="zip">Baixar ZIP com vários (quando múltiplos IDs)</option>
+          <option value="none">Não baixar automaticamente</option>
+        </select>
+      </div>
+      <div class="col">
+        <label for="language">Idioma da busca</label>
+        <select id="language" style="padding:8px; border-radius:5px; background:#333; color:#eee; border:none;">
+          <option value="pt-BR">pt-BR</option>
+          <option value="en-US">en-US</option>
+        </select>
+      </div>
+    </div>
+
+    <button type="submit">Buscar e Gerar JSON</button>
+  </form>
+
+  <div id="errorMsg" class="error"></div>
+  <pre id="jsonOutput"></pre>
+
+  <script>
+    const form = document.getElementById('tmdbForm');
+    const output = document.getElementById('jsonOutput');
+    const errorMsg = document.getElementById('errorMsg');
+    const autoDownloadSelect = document.getElementById('autoDownload');
+    const languageSelect = document.getElementById('language');
+
+    // Substitua pelo seu token TMDb válido
+    const TMDB_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiZjZhMGEzMjhmOWY2NzY5MzZmNDBiZjRmYmIyY2U5YSIsIm5iZiI6MTY4MjcwODQzNi44NTY5OTk5LCJzdWIiOiI2NDRjMTdkNDUxYTY0ZTA4OGFkZDY4MmEiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.k4rE_75eOyG6BWcYCAa2sbcGHVpsX9UTH4Y5NVoQ0L4";
+
+    const statusMap = {
+      "Returning Series": "Série em Andamento",
+      "Ended": "Finalizada",
+      "Canceled": "Cancelada",
+      "Pilot": "Piloto",
+      "In Production": "Em Produção",
+      "Released": "Lançado",
+      "Post Production": "Pós-produção"
+    };
+
+    const generoMap = {
+      "Action & Adventure": "Ação e Aventura",
+      "Comedy": "Comédia",
+      "Drama": "Drama",
+      "Fantasy": "Fantasia",
+      "Sci-Fi & Fantasy": "Ficção Científica e Fantasia",
+      "Animation": "Animação",
+      "Superhero": "Super-herói",
+      "Romance": "Romance",
+      "Mystery": "Mistério",
+      "Horror": "Terror",
+      "Thriller": "Suspense",
+      "Family": "Família",
+      "History": "História",
+      "Crime": "Crime",
+      "Documentary": "Documentário",
+      "War & Politics": "Guerra e Política",
+      "Music": "Música"
+    };
+
+    function traduzirGeneros(genres) {
+      if (!genres || genres.length === 0) return "";
+      return genres.map(g => generoMap[g.name] || g.name).join(", ");
+    }
+
+    function traduzirClassificacao(adult) {
+      return adult ? "18+" : "10+";
+    }
+
+    async function buscarDadosTMDb(tmdbId, lang) {
+      let tipo = "";
+      let data = null;
+
+      // Testa como TV
+      let res = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}?language=${lang}`, {
+        headers: { Authorization: "Bearer " + TMDB_TOKEN, 'Content-Type': 'application/json;charset=utf-8' }
+      });
+      if (res.ok) {
+        data = await res.json();
+        tipo = "tv";
+      } else {
+        // Testa como Movie
+        res = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}?language=${lang}`, {
+          headers: { Authorization: "Bearer " + TMDB_TOKEN, 'Content-Type': 'application/json;charset=utf-8' }
+        });
+        if (res.ok) {
+          data = await res.json();
+          tipo = "movie";
+        }
+      }
+
+      if (!data) throw new Error("ID não encontrado no TMDb.");
+
+      return { data, tipo };
+    }
+
+    async function buscarTemporada(tmdbId, seasonNumber, lang) {
+      const res = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/season/${seasonNumber}?language=${lang}`, {
+        headers: { Authorization: "Bearer " + TMDB_TOKEN }
+      });
+      if (!res.ok) throw new Error(`Não foi possível obter dados da temporada ${seasonNumber}`);
+      return await res.json();
+    }
+
+    async function buscarTemporadas(tmdbId, seasons, lang) {
+      const temporadas = [];
+      for (const season of seasons) {
+        try {
+          const data = await buscarTemporada(tmdbId, season.season_number, lang);
+          temporadas.push({
+            id: `${tmdbId}-${season.season_number}`,
+            nome: season.name || `Temporada ${season.season_number}`,
+            numero: season.season_number,
+            descricao: season.overview || "Sem descrição",
+            ano: (season.air_date || "").slice(0, 4) || "",
+            capa: season.poster_path ? `https://image.tmdb.org/t/p/w500${season.poster_path}` : "",
+            anime_id: tmdbId,
+            total_episodios: data.episodes ? data.episodes.length : 0,
+            tmdb_id: `${tmdbId}-${season.season_number}`,
+            data_criacao: data.air_date ? new Date(data.air_date).toISOString() : "",
+            data_atualizacao: new Date().toISOString()
+          });
+        } catch (e) {
+          temporadas.push({ error: e.message, season_number: season.season_number });
+        }
+      }
+      return temporadas;
+    }
+
+    async function buscarTrailer(tmdbId, tipo, lang) {
+      const res = await fetch(`https://api.themoviedb.org/3/${tipo}/${tmdbId}/videos?language=${lang}`, {
+        headers: { Authorization: "Bearer " + TMDB_TOKEN }
+      });
+      if (!res.ok) return "";
+      const data = await res.json();
+      const trailer = data.results.find(v => v.type === "Trailer" && v.site === "YouTube")
+                   || data.results.find(v => v.type === "Teaser" && v.site === "YouTube");
+      return trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : "";
+    }
+
+    async function buscarLogo(tmdbId, tipo) {
+      const res = await fetch(`https://api.themoviedb.org/3/${tipo}/${tmdbId}/images`, {
+        headers: { Authorization: "Bearer " + TMDB_TOKEN }
+      });
+      if (!res.ok) return "";
+      const data = await res.json();
+      const logo = (data.logos && data.logos.length > 0 && data.logos[0].file_path) ||
+                   (data.posters && data.posters.length > 0 && data.posters[0].file_path) || "";
+      return logo ? `https://image.tmdb.org/t/p/w500${logo}` : "";
+    }
+
+    function baixarJSON(obj, nomeArquivo) {
+      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nomeArquivo + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      output.textContent = "";
+      errorMsg.textContent = "";
+
+      const raw = form.tmdbId.value.trim();
+      if (!raw) {
+        errorMsg.textContent = "Por favor, insira um TMDb ID válido.";
+        return;
+      }
+
+      const lang = languageSelect.value || 'pt-BR';
+      const autoMode = autoDownloadSelect.value;
+
+      const ids = raw.split(',').map(s => s.trim()).filter(Boolean);
+
+      try {
+        const results = [];
+
+        for (const id of ids) {
+          try {
+            const { data, tipo } = await buscarDadosTMDb(id, lang);
+
+            if (tipo === "tv" && data.seasons && data.seasons.length > 0) {
+              // Extrair as temporadas detalhadas
+              const temporadas = await buscarTemporadas(id, data.seasons, lang);
+
+              // Mostrar JSON das temporadas
+              results.push({
+                id,
+                nome: data.name || "",
+                temporadas
+              });
+            } else {
+              // Caso seja filme ou série sem temporadas, gerar JSON normal
+              const resIds = await fetch(`https://api.themoviedb.org/3/${tipo}/${id}/external_ids`, {
+                headers: { Authorization: "Bearer " + TMDB_TOKEN }
+              });
+              const idsData = resIds.ok ? await resIds.json() : {};
+
+              const trailerUrl = await buscarTrailer(id, tipo, lang);
+              const logoUrl = await buscarLogo(id, tipo);
+
+              const jsonResult = {
+                id: id,
+                nome: data.name || data.title || "",
+                titulo_original: data.original_name || data.original_title || "",
+                genero: traduzirGeneros(data.genres),
+                descricao: data.overview || "",
+                ano: (data.first_air_date || data.release_date || "").slice(0, 4),
+                status: statusMap[data.status] || data.status || "",
+                pais: data.origin_country?.[0] || (data.production_countries?.[0]?.iso_3166_1 || ""),
+                duracao_episodio: data.episode_run_time?.[0]?.toString() || (data.runtime?.toString() || ""),
+                classificacao: traduzirClassificacao(data.adult),
+                popularidade: data.popularity?.toFixed(4) || "",
+                trailer: trailerUrl,
+                capa: data.poster_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.poster_path}` : "",
+                banner: data.backdrop_path ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}` : "",
+                logo: logoUrl,
+                thumbnail: "",
+                tmdb_id: id,
+                imdb_id: idsData.imdb_id || "",
+                data_criacao: (data.first_air_date || data.release_date) ? new Date(data.first_air_date || data.release_date).toISOString() : "",
+                data_atualizacao: new Date().toISOString(),
+                coluna: "",
+                linguagem: data.original_language || "",
+                msg: data.tagline || "",
+                qualidade: "HD"
+              };
+
+              results.push(jsonResult);
+            }
+
+          } catch (innerErr) {
+            results.push({ id, error: innerErr.message });
+          }
+        }
+
+        if (results.length === 1) {
+          output.textContent = JSON.stringify(results[0], null, 2);
+        } else {
+          output.textContent = JSON.stringify(results, null, 2);
+        }
+
+        if (autoMode === 'single' && results.length === 1 && !results[0].error) {
+          const nomeArquivo = (results[0].nome || ('tmdb_' + results[0].id)).replace(/[^\w\-]+/g, "_");
+          baixarJSON(results[0], nomeArquivo);
+        } else if (autoMode === 'single' && results.length > 1) {
+          for (const r of results) {
+            if (!r.error) {
+              const nomeArquivo = (r.nome || ('tmdb_' + r.id)).replace(/[^\w\-]+/g, "_");
+              baixarJSON(r, nomeArquivo);
+            }
+          }
+        } else if (autoMode === 'zip') {
+          errorMsg.textContent = "Modo ZIP selecionado: ZIP não implementado automaticamente. Posso adicionar JSZip se desejar.";
+        }
+
+      } catch (error) {
+        errorMsg.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>
+
