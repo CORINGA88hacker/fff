@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gerador JSON TMDb - Série e Temporadas</title>
+  <title>Gerador JSON TMDb - Série e Temporadas com Busca por Nome</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -31,7 +31,7 @@
       font-weight: bold;
       color: #ffa64d;
     }
-    input[type="text"], textarea {
+    input[type="text"], textarea, select {
       width: 100%;
       padding: 8px;
       margin-top: 5px;
@@ -91,16 +91,19 @@
   </style>
 </head>
 <body>
-  <h1>Gerador JSON TMDb - Série e Temporadas</h1>
+  <h1>Gerador JSON TMDb - Série e Temporadas com Busca por Nome</h1>
 
   <form id="tmdbForm">
-    <label for="tmdbId">Digite o TMDb ID da série/anime:</label>
-    <input type="text" id="tmdbId" name="tmdbId" placeholder="ex: 37854 — apenas número" required />
+    <label for="tmdbName">Digite o nome da série/anime:</label>
+    <input type="text" id="tmdbName" name="tmdbName" placeholder="ex: Naruto" />
+
+    <label for="tmdbId">Ou digite o TMDb ID da série/anime:</label>
+    <input type="text" id="tmdbId" name="tmdbId" placeholder="ex: 37854 — apenas número" pattern="\d*" title="Apenas números" />
 
     <div class="row">
       <div class="col">
         <label for="language">Idioma da busca</label>
-        <select id="language" name="language" style="padding:8px; border-radius:5px; background:#333; color:#eee; border:none;">
+        <select id="language" name="language">
           <option value="pt-BR">pt-BR</option>
           <option value="en-US">en-US</option>
         </select>
@@ -128,6 +131,7 @@
     const colunaInput = document.getElementById('coluna');
     const languageSelect = document.getElementById('language');
     const tmdbInput = document.getElementById('tmdbId');
+    const tmdbNameInput = document.getElementById('tmdbName');
 
     const btnSerie = document.getElementById('btnSerie');
     const btnTemporadas = document.getElementById('btnTemporadas');
@@ -179,12 +183,22 @@
       return await res.json();
     }
 
-    async function buscarSerie(tmdbId, lang) {
-      return await fetchJSON(`https://api.themoviedb.org/3/tv/${tmdbId}?language=${lang}`);
+    async function buscarIdPorNome(nome, lang) {
+      const url = `https://api.themoviedb.org/3/search/tv?query=${encodeURIComponent(nome)}&language=${lang}`;
+      const data = await fetchJSON(url);
+      if (data.results && data.results.length > 0) {
+        return data.results[0].id;
+      }
+      throw new Error("Série não encontrada pelo nome.");
     }
 
-    async function buscarTemporadas(tmdbId, lang) {
-      return await fetchJSON(`https://api.themoviedb.org/3/tv/${tmdbId}/seasons?language=${lang}`);
+    async function buscarImdbId(tmdbId) {
+      const data = await fetchJSON(`https://api.themoviedb.org/3/tv/${tmdbId}/external_ids`);
+      return data.imdb_id || "";
+    }
+
+    async function buscarSerie(tmdbId, lang) {
+      return await fetchJSON(`https://api.themoviedb.org/3/tv/${tmdbId}?language=${lang}`);
     }
 
     async function buscarTemporadaDetalhes(tmdbId, seasonNumber, lang) {
@@ -205,21 +219,34 @@
       return logo ? `https://image.tmdb.org/t/p/w500${logo}` : "";
     }
 
+    async function obterId(lang) {
+      let id = tmdbInput.value.trim();
+      const nome = tmdbNameInput.value.trim();
+
+      if (id) {
+        // só números?
+        if (!/^\d+$/.test(id)) throw new Error("O TMDb ID deve conter apenas números.");
+        return id;
+      } else if (nome) {
+        return await buscarIdPorNome(nome, lang);
+      } else {
+        throw new Error("Por favor, insira o TMDb ID ou o nome da série/anime.");
+      }
+    }
+
     btnSerie.addEventListener('click', async () => {
       errorMsg.textContent = "";
       output.textContent = "";
-      const tmdbId = tmdbInput.value.trim();
-      if (!tmdbId) {
-        errorMsg.textContent = "Por favor, insira o TMDb ID da série.";
-        return;
-      }
       const lang = languageSelect.value;
       const coluna = colunaInput.value.trim();
 
       try {
+        const tmdbId = await obterId(lang);
+
         const data = await buscarSerie(tmdbId, lang);
         const trailerUrl = await buscarTrailer(tmdbId, lang);
         const logoUrl = await buscarLogo(tmdbId);
+        const imdbId = await buscarImdbId(tmdbId);
 
         const jsonSerie = {
           id: tmdbId,
@@ -239,7 +266,7 @@
           logo: logoUrl,
           thumbnail: "",
           tmdb_id: tmdbId,
-          imdb_id: "", // poderia pegar de external_ids se quiser
+          imdb_id: imdbId,
           data_criacao: data.first_air_date ? new Date(data.first_air_date).toISOString() : "",
           data_atualizacao: new Date().toISOString(),
           coluna: coluna,
@@ -249,6 +276,7 @@
         };
 
         output.textContent = JSON.stringify(jsonSerie, null, 2);
+        output.select();
       } catch (err) {
         errorMsg.textContent = err.message;
       }
@@ -257,21 +285,11 @@
     btnTemporadas.addEventListener('click', async () => {
       errorMsg.textContent = "";
       output.textContent = "";
-      const tmdbId = tmdbInput.value.trim();
-      if (!tmdbId) {
-        errorMsg.textContent = "Por favor, insira o TMDb ID da série.";
-        return;
-      }
       const lang = languageSelect.value;
       const coluna = colunaInput.value.trim();
 
       try {
-        // Primeiro pega info da série para validar
-        await buscarSerie(tmdbId, lang);
-
-        // Pega todas as temporadas
-        // A API oficial não tem endpoint /seasons direto, mas a info vem no objeto série no campo seasons
-        // Então, para pegar detalhes das temporadas, vamos pegar série e depois cada temporada separadamente
+        const tmdbId = await obterId(lang);
 
         const serieData = await buscarSerie(tmdbId, lang);
         const temporadas = serieData.seasons || [];
@@ -300,6 +318,7 @@
         }
 
         output.textContent = JSON.stringify(jsonTemporadas, null, 2);
+        output.select();
       } catch (err) {
         errorMsg.textContent = err.message;
       }
