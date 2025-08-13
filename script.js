@@ -3,6 +3,7 @@ let animesData = [];
 function criarCardAnime(anime) {
     const card = document.createElement('div');
     card.className = 'anime-card';
+    card.setAttribute('data-id', anime.id);  // <-- adiciona o atributo data-id
 
     const img = document.createElement('img');
     img.src = anime.capa || 'https://via.placeholder.com/140x210?text=Sem+Imagem';
@@ -35,6 +36,25 @@ function mostrarAnimes(lista) {
     lista.forEach(anime => listEl.appendChild(criarCardAnime(anime)));
     document.getElementById('counter').textContent = `Animes exibidos: ${lista.length}`;
 }
+
+// Função para copiar texto e mostrar feedback simples
+function copiarTexto(texto) {
+    navigator.clipboard.writeText(texto).then(() => {
+        // Pode trocar o alert por uma mensagem melhor no futuro
+        alert(`ID "${texto}" copiado para a área de transferência!`);
+    }).catch(err => {
+        alert('Erro ao copiar o ID: ' + err);
+    });
+}
+
+// Delegação de evento para clique em cards dentro do container anime-list
+document.getElementById('anime-list').addEventListener('click', e => {
+    const card = e.target.closest('.anime-card');
+    if (card) {
+        const id = card.getAttribute('data-id');
+        if (id) copiarTexto(id);
+    }
+});
 
 async function fetchAnimes() {
     try {
