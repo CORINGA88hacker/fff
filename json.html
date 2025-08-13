@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gerador JSON TMDb - Série e Temporadas com Busca por Nome</title>
+  <title>Gerador JSON TMDb - Série e Temporadas com ID Garantido</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -31,7 +31,7 @@
       font-weight: bold;
       color: #ffa64d;
     }
-    input[type="text"], textarea, select {
+    input[type="text"], select {
       width: 100%;
       padding: 8px;
       margin-top: 5px;
@@ -74,11 +74,6 @@
       margin-top: 15px;
       font-weight: bold;
     }
-    .hint {
-      color: #aaa;
-      font-size: 0.9rem;
-      margin-top: 6px;
-    }
     .row {
       display: flex;
       gap: 12px;
@@ -91,14 +86,14 @@
   </style>
 </head>
 <body>
-  <h1>Gerador JSON TMDb - Série e Temporadas com Busca por Nome</h1>
+  <h1>Gerador JSON TMDb - Série e Temporadas com ID Garantido</h1>
 
   <form id="tmdbForm">
     <label for="tmdbName">Digite o nome da série/anime:</label>
     <input type="text" id="tmdbName" name="tmdbName" placeholder="ex: Naruto" />
 
     <label for="tmdbId">Ou digite o TMDb ID da série/anime:</label>
-    <input type="text" id="tmdbId" name="tmdbId" placeholder="ex: 37854 — apenas número" pattern="\d*" title="Apenas números" />
+    <input type="text" id="tmdbId" name="tmdbId" placeholder="ex: 63926 — apenas número" pattern="\d*" title="Apenas números" />
 
     <div class="row">
       <div class="col">
@@ -192,6 +187,16 @@
       throw new Error("Série não encontrada pelo nome.");
     }
 
+    async function garantirIdSerie(tmdbId) {
+      try {
+        // Testa se o ID existe como série
+        await fetchJSON(`https://api.themoviedb.org/3/tv/${tmdbId}`);
+        return tmdbId;
+      } catch {
+        throw new Error("ID inválido ou série não encontrada. Use o ID da série principal, não da temporada.");
+      }
+    }
+
     async function buscarImdbId(tmdbId) {
       const data = await fetchJSON(`https://api.themoviedb.org/3/tv/${tmdbId}/external_ids`);
       return data.imdb_id || "";
@@ -224,11 +229,11 @@
       const nome = tmdbNameInput.value.trim();
 
       if (id) {
-        // só números?
         if (!/^\d+$/.test(id)) throw new Error("O TMDb ID deve conter apenas números.");
-        return id;
+        return await garantirIdSerie(id);
       } else if (nome) {
-        return await buscarIdPorNome(nome, lang);
+        const idEncontrado = await buscarIdPorNome(nome, lang);
+        return await garantirIdSerie(idEncontrado);
       } else {
         throw new Error("Por favor, insira o TMDb ID ou o nome da série/anime.");
       }
