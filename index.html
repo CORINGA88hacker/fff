@@ -4,7 +4,107 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Animes - Estilo Netflix</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #141414;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            text-align: center;
+            padding: 20px;
+            background-color: #000;
+        }
+        #search-container {
+            text-align: center;
+            margin: 20px;
+        }
+        #search-input {
+            padding: 10px;
+            font-size: 16px;
+            width: 250px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            margin-left: 5px;
+            cursor: pointer;
+            background-color: #e50914;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #f40612;
+        }
+        #counter {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        #loading {
+            text-align: center;
+            font-size: 18px;
+            padding: 20px;
+        }
+        .anime-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 20px;
+        }
+        .anime-card {
+            background-color: #222;
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 10px;
+            text-align: center;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .anime-card:hover {
+            transform: scale(1.05);
+        }
+        .anime-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        .anime-card h3 {
+            margin: 10px 0 5px;
+        }
+        dialog {
+            background-color: #222;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 600px;
+            width: 90%;
+        }
+        dialog::backdrop {
+            background: rgba(0,0,0,0.8);
+        }
+        #episode-list {
+            list-style: none;
+            padding: 0;
+        }
+        #episode-list li {
+            margin: 8px 0;
+            padding: 8px;
+            background: #333;
+            border-radius: 5px;
+        }
+        #episode-list li a {
+            color: #fff;
+            text-decoration: none;
+        }
+        #episode-list li a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -21,15 +121,111 @@
     <div id="loading">Carregando animes...</div>
     <section id="anime-list" class="anime-list"></section>
 
-    <!-- Modal para episódios -->
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span id="modal-close">&times;</span>
-            <h2 id="modal-title"></h2>
-            <ul id="episode-list"></ul>
-        </div>
-    </div>
+    <!-- Diálogo nativo HTML -->
+    <dialog id="anime-dialog">
+        <h2 id="modal-title"></h2>
+        <ul id="episode-list"></ul>
+        <form method="dialog">
+            <button>Fechar</button>
+        </form>
+    </dialog>
 
-    <script src="script.js"></script>
+    <script>
+        const animeListEl = document.getElementById('anime-list');
+        const counterEl = document.getElementById('counter');
+        const loadingEl = document.getElementById('loading');
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const dialog = document.getElementById('anime-dialog');
+        const modalTitle = document.getElementById('modal-title');
+        const episodeList = document.getElementById('episode-list');
+
+        let temporadas = [];
+        let episodios = [];
+
+        async function carregarDados() {
+            try {
+                loadingEl.style.display = 'block';
+                animeListEl.innerHTML = '';
+                counterEl.textContent = '';
+
+                const [tempRes, epiRes] = await Promise.all([
+                    fetch('https://anime-aniverso.vercel.app/temporadas.json'),
+                    fetch('https://anime-aniverso.vercel.app/episodios.json')
+                ]);
+
+                temporadas = await tempRes.json();
+                episodios = await epiRes.json();
+
+                temporadas = temporadas.map(temp => {
+                    const eps = episodios.filter(ep => String(ep.temporada_id) === String(temp.id));
+                    return {
+                        ...temp,
+                        totalEpisodios: eps.length,
+                        episodios: eps
+                    };
+                });
+
+                exibirAnimes(temporadas);
+            } catch (err) {
+                console.error('Erro ao carregar dados:', err);
+                animeListEl.innerHTML = '<p>Erro ao carregar os dados.</p>';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        function exibirAnimes(lista) {
+            animeListEl.innerHTML = '';
+
+            lista.forEach(anime => {
+                const card = document.createElement('div');
+                card.className = 'anime-card';
+                card.innerHTML = `
+                    <img src="${anime.capa || 'https://via.placeholder.com/200x300?text=Sem+Capa'}" alt="${anime.nome}">
+                    <h3>${anime.nome}</h3>
+                    <p><strong>ID:</strong> ${anime.id}</p>
+                    <p><strong>Ano:</strong> ${anime.ano || 'Desconhecido'}</p>
+                    <p><strong>Episódios:</strong> ${anime.totalEpisodios}</p>
+                `;
+                card.addEventListener('click', () => abrirDialogo(anime));
+                animeListEl.appendChild(card);
+            });
+
+            counterEl.textContent = `Total: ${lista.length} animes`;
+        }
+
+        function abrirDialogo(anime) {
+            modalTitle.textContent = `${anime.nome} - Episódios`;
+            episodeList.innerHTML = '';
+
+            if (anime.episodios.length === 0) {
+                episodeList.innerHTML = '<li>Sem episódios disponíveis</li>';
+            } else {
+                anime.episodios.forEach(ep => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<a href="${ep.link}" target="_blank">${ep.nome || 'Episódio sem título'}</a>`;
+                    episodeList.appendChild(li);
+                });
+            }
+
+            dialog.showModal();
+        }
+
+        searchBtn.addEventListener('click', () => {
+            const termo = searchInput.value.trim();
+            if (!termo) return;
+            const resultado = temporadas.filter(anime => String(anime.id) === termo);
+            exibirAnimes(resultado);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            exibirAnimes(temporadas);
+        });
+
+        carregarDados();
+    </script>
 </body>
 </html>
