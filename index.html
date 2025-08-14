@@ -85,11 +85,8 @@ let episodios = [];
 let temporadas = [];
 
 async function carregarDados() {
+  loadingEl.style.display = 'block';
   try {
-    loadingEl.style.display = 'block';
-    animeListEl.innerHTML = '';
-    counterEl.textContent = '';
-
     const [resA, resE, resT] = await Promise.all([
       fetch('https://anime-aniverso.vercel.app/animes.json'),
       fetch('https://anime-aniverso.vercel.app/episodios.json'),
@@ -132,16 +129,16 @@ function abrirDialogo(anime) {
   modalYear.textContent = `Ano: ${anime.ano || 'Desconhecido'}`;
   dialogCapa.src = anime.capa || 'https://via.placeholder.com/200x300?text=Sem+Capa';
 
+  // Filtra episódios e temporadas
   const eps = episodios.filter(ep => String(ep.anime_id) === String(anime.id));
   modalEpCount.textContent = `Episódios: ${eps.length}`;
 
-  const seas = temporadas.filter(season => String(season.anime_id) === String(anime.id));
+  const seas = temporadas.filter(s => String(s.anime_id) === String(anime.id));
   modalSeasonCount.textContent = `Temporadas: ${seas.length}`;
 
   episodeList.innerHTML = '';
-  if (eps.length === 0) {
-    episodeList.innerHTML = '<li>Sem episódios disponíveis</li>';
-  } else {
+  if (eps.length === 0) episodeList.innerHTML = '<li>Sem episódios disponíveis</li>';
+  else {
     eps.forEach(ep => {
       const li = document.createElement('li');
       li.innerHTML = `<a href="${ep.link}" target="_blank">${ep.nome || ep.titulo || 'Episódio sem título'}</a>`;
@@ -166,5 +163,6 @@ clearBtn.addEventListener('click', () => {
 
 carregarDados();
 </script>
+
 </body>
 </html>
