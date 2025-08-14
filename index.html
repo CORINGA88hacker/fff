@@ -110,9 +110,9 @@ function exibirAnimes(lista) {
         const card = document.createElement('div');
         card.className = 'anime-card';
         card.innerHTML = `
-        <img src="${anime.capa || 'https://via.placeholder.com/200x300?text=Sem+Capa'}" alt="${anime.nome}">
-        <h3>${anime.nome}</h3>
-        <p>ID: ${anime.id}</p>
+        <img src="${anime.capa || 'https://via.placeholder.com/200x300?text=Sem+Capa'}" alt="${anime.nome || 'Sem título'}">
+        <h3>${anime.nome || 'Sem título'}</h3>
+        <p>ID: ${anime.id || 'Não disponível'}</p>
         <p>${anime.ano || 'Ano desconhecido'}</p>`;
         card.addEventListener('click', () => abrirDialogo(anime));
         animeListEl.appendChild(card);
@@ -121,7 +121,7 @@ function exibirAnimes(lista) {
 }
 
 function abrirDialogo(anime) {
-    modalTitle.textContent = anime.nome;
+    modalTitle.textContent = anime.nome || 'Sem título';
     modalDesc.textContent = anime.descricao || 'Sem descrição';
     modalYear.textContent = `Ano: ${anime.ano || 'Desconhecido'}`;
     dialogCapa.src = anime.capa || 'https://via.placeholder.com/200x300?text=Sem+Capa';
@@ -131,20 +131,33 @@ function abrirDialogo(anime) {
 
     episodeList.innerHTML = '';
     let totalEps = 0;
+
     seas.forEach(season => {
+        const seasonName = season.nome || `Temporada ${season.numero || '?'}`;
         const liSeason = document.createElement('li');
-        liSeason.innerHTML = `<strong>${season.nome} (${season.total_episodios} episódios)</strong>`;
+        liSeason.innerHTML = `<strong>${seasonName} (${season.total_episodios || 0} episódios)</strong>`;
         episodeList.appendChild(liSeason);
 
         const eps = episodios.filter(ep => String(ep.temporada_id) === String(season.id));
         totalEps += eps.length;
 
-        eps.forEach(ep => {
+        if(eps.length === 0){
             const li = document.createElement('li');
             li.style.paddingLeft = '15px';
-            li.innerHTML = `<a href="${ep.legendado}" target="_blank">${ep.nome || ep.titulo} (Legendado)</a> | <a href="${ep.dublado}" target="_blank">Dublado</a>`;
+            li.textContent = 'Sem episódios disponíveis';
             episodeList.appendChild(li);
-        });
+        } else {
+            eps.forEach(ep => {
+                const epNome = ep.nome || ep.titulo || 'Episódio sem título';
+                const epLegendado = ep.legendado || '#';
+                const epDublado = ep.dublado || '#';
+
+                const li = document.createElement('li');
+                li.style.paddingLeft = '15px';
+                li.innerHTML = `<a href="${epLegendado}" target="_blank">${epNome} (Legendado)</a> | <a href="${epDublado}" target="_blank">Dublado</a>`;
+                episodeList.appendChild(li);
+            });
+        }
     });
 
     modalEpCount.textContent = `Episódios: ${totalEps}`;
