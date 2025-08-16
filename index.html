@@ -60,6 +60,11 @@ dialog::backdrop { background: rgba(0,0,0,0.85); }
 #episode-list li a:hover { text-decoration: underline; }
 form[method="dialog"] { margin-top: 15px; text-align: right; }
 
+/* Botões copiar */
+#copy-container { margin-top: 15px; text-align: right; }
+#copy-container button { background: #333; margin-left: 5px; }
+#copy-container button:hover { background: #444; }
+
 /* Responsivo */
 @media (max-width: 600px) {
   #dialog-header { flex-direction: column; align-items: center; }
@@ -91,6 +96,13 @@ form[method="dialog"] { margin-top: 15px; text-align: right; }
 <p id="modal-ep-count"></p>
 </div>
 </div>
+
+<!-- Botões copiar -->
+<div id="copy-container">
+  <button id="copy-name">📋 Copiar Nome</button>
+  <button id="copy-id">📋 Copiar ID</button>
+</div>
+
 <ul id="episode-list"></ul>
 <form method="dialog"><button>Fechar</button></form>
 </dialog>
@@ -109,10 +121,13 @@ const modalSeasonCount = document.getElementById('modal-season-count');
 const modalEpCount = document.getElementById('modal-ep-count');
 const dialogCapa = document.getElementById('dialog-capa');
 const episodeList = document.getElementById('episode-list');
+const copyNameBtn = document.getElementById('copy-name');
+const copyIdBtn = document.getElementById('copy-id');
 
 let animes = [];
 let episodios = [];
 let temporadas = [];
+let animeAtual = null; // anime atual do modal
 
 async function carregarDados() {
     loadingEl.style.display = 'block';
@@ -139,6 +154,11 @@ async function carregarDados() {
 
 function exibirAnimes(lista) {
     animeListEl.innerHTML = '';
+    if (lista.length === 0) {
+        animeListEl.innerHTML = `<p style="text-align:center">⚠ Nenhum anime encontrado.</p>`;
+        counterEl.textContent = "Total: 0 animes";
+        return;
+    }
     lista.forEach(anime => {
         const card = document.createElement('div');
         card.className = 'anime-card';
@@ -154,6 +174,7 @@ function exibirAnimes(lista) {
 }
 
 function abrirDialogo(anime) {
+    animeAtual = anime; // salva para copiar depois
     modalTitle.textContent = anime.nome || 'Sem título';
     modalDesc.textContent = anime.descricao || 'Sem descrição';
     modalYear.textContent = `Ano: ${anime.ano || 'Desconhecido'}`;
@@ -210,11 +231,18 @@ document.addEventListener('keydown', e => {
 });
 
 // Busca em tempo real
+function normalizarTexto(texto) {
+    return texto ? texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+}
 searchInput.addEventListener('input', () => {
-    const termo = searchInput.value.trim().toLowerCase();
+    const termo = normalizarTexto(searchInput.value.trim());
+    if (!termo) {
+        exibirAnimes(animes);
+        return;
+    }
     const resultado = animes.filter(a =>
         String(a.id) === termo ||
-        a.nome?.toLowerCase().includes(termo)
+        normalizarTexto(a.nome)?.includes(termo)
     );
     exibirAnimes(resultado);
 });
@@ -222,6 +250,22 @@ searchInput.addEventListener('input', () => {
 clearBtn.addEventListener('click', () => {
     searchInput.value = '';
     exibirAnimes(animes);
+});
+
+// Botões de copiar
+copyNameBtn.addEventListener('click', () => {
+    if (animeAtual) {
+        navigator.clipboard.writeText(animeAtual.nome || "Sem título").then(() => {
+            alert("✅ Nome copiado!");
+        });
+    }
+});
+copyIdBtn.addEventListener('click', () => {
+    if (animeAtual) {
+        navigator.clipboard.writeText(animeAtual.id || "Sem ID").then(() => {
+            alert("✅ ID copiado!");
+        });
+    }
 });
 
 carregarDados();
