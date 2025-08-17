@@ -4,265 +4,234 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Super Netflix de Animes</title>
-<meta name="theme-color" content="#e50914">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+
+<!-- SEO e compartilhamento -->
+<meta name="description" content="Super Netflix de Animes - Assista animes grátis online com temporadas e episódios.">
+<meta property="og:title" content="Super Netflix de Animes">
+<meta property="og:description" content="Assista animes grátis online com temporadas e episódios.">
+<meta property="og:type" content="website">
 
 <style>
-body { font-family: 'Open Sans', sans-serif; background: #141414; color: #fff; margin: 0; }
-header { text-align: center; padding: 20px; background: linear-gradient(to bottom, #000, transparent); }
-header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: #e50914; letter-spacing: 2px; }
-
-#search-container { text-align: center; margin: 20px; }
-#search-input { padding: 10px; font-size: 16px; width: 250px; border-radius: 4px; border: none; }
-#filter-year { padding: 10px; font-size: 16px; margin-left: 5px; border-radius: 4px; border: none; }
-button { padding: 10px 15px; font-size: 16px; margin-left: 5px; cursor: pointer; background: #e50914; color: #fff; border: none; border-radius: 4px; transition: .3s; }
-button:hover { background: #f40612; }
-#counter { text-align: center; margin-bottom: 20px; font-size: 18px; font-weight: bold; }
-
-.anime-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; padding: 20px; }
-.anime-card { background: #181818; border-radius: 8px; cursor: pointer; transition: transform .3s, box-shadow .3s; position: relative; }
-.anime-card:hover { transform: scale(1.08); box-shadow: 0 0 20px rgba(255,0,0,0.5); }
-.anime-card img { width: 100%; height: 270px; object-fit: cover; border-radius: 8px 8px 0 0; }
-.anime-card h2 { font-family: 'Bebas Neue', sans-serif; margin: 10px; font-size: 18px; color: #fff; }
-.anime-card p { font-size: 13px; margin: 5px 10px; color: #aaa; }
-.favorite-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; }
-.favorite-btn.active { color: #e50914; }
-
-dialog { background: #181818; color: #fff; border: none; border-radius: 10px; padding: 20px; width: 90%; max-width: 800px; }
-dialog::backdrop { background: rgba(0,0,0,0.85); }
-#dialog-header { display: flex; gap: 20px; flex-wrap: wrap; }
-#dialog-header img { width: 200px; border-radius: 5px; }
-#dialog-info { flex: 1; }
-#dialog-info h2 { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: #e50914; margin: 0; }
-#episode-list { margin-top: 20px; padding: 0; }
-#episode-list details { background: #222; margin-bottom: 8px; border-radius: 6px; padding: 6px; }
-#episode-list summary { cursor: pointer; font-weight: bold; }
-#episode-list li { padding: 5px 15px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
-#episode-list li a { color: #fff; text-decoration: none; }
-#episode-list li a:hover { text-decoration: underline; }
-.watched { color: #0f0; font-size: 13px; margin-left: 8px; }
-form[method="dialog"] { margin-top: 15px; text-align: right; }
-
-/* Toast */
-#toast {
-  position: fixed; bottom: 20px; right: 20px;
-  background: #333; color: #fff;
-  padding: 10px 15px; border-radius: 6px;
-  opacity: 0; transition: opacity .4s;
-}
-#toast.show { opacity: 1; }
-
-/* Responsivo */
-@media (max-width: 600px) {
-  #dialog-header { flex-direction: column; align-items: center; }
-  #dialog-header img { width: 150px; }
-}
+  body {
+    font-family: Arial, sans-serif;
+    background: #0d0d0d;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+  }
+  header {
+    background: #141414;
+    padding: 15px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0;
+    color: #e50914;
+  }
+  .search-container {
+    margin: 15px auto;
+    text-align: center;
+  }
+  input[type="text"] {
+    padding: 10px;
+    width: 80%;
+    max-width: 400px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    padding: 20px;
+  }
+  .card {
+    background: #1c1c1c;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .card:hover {
+    transform: scale(1.05);
+  }
+  .card img {
+    width: 100%;
+    display: block;
+  }
+  .card h2 {
+    font-size: 18px;
+    margin: 10px;
+  }
+  dialog {
+    border: none;
+    border-radius: 10px;
+    max-width: 800px;
+    width: 90%;
+    background: #1a1a1a;
+    color: #fff;
+    padding: 20px;
+  }
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.8);
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-header h2 {
+    margin: 0;
+  }
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #fff;
+    cursor: pointer;
+  }
+  .episode-list {
+    margin-top: 15px;
+  }
+  .episode-btn {
+    display: block;
+    background: #e50914;
+    color: #fff;
+    padding: 8px;
+    margin: 5px 0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .player-dialog video {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    outline: none;
+  }
 </style>
 </head>
 <body>
+<header>
+  <h1>Super Netflix de Animes</h1>
+</header>
 
-<header><h1>Lista de Animes</h1></header>
+<div class="search-container">
+  <input type="text" id="searchInput" placeholder="Pesquisar anime por nome ou ID...">
+</div>
 
-<section id="search-container">
-  <input type="text" id="search-input" placeholder="Pesquisar anime..." aria-label="Pesquisar anime">
-  <select id="filter-year"><option value="">Ano</option></select>
-  <button id="clear-btn">Limpar</button>
-</section>
+<div class="grid" id="animeGrid"></div>
 
-<div id="counter"></div>
-<section id="anime-list" class="anime-list"></section>
-
-<dialog id="anime-dialog">
-  <div id="dialog-header">
-    <img id="dialog-capa" src="" alt="Capa do anime">
-    <div id="dialog-info">
-      <h2 id="modal-title"></h2>
-      <p id="modal-desc"></p>
-      <p id="modal-year"></p>
-      <p id="modal-season-count"></p>
-      <p id="modal-ep-count"></p>
-    </div>
+<!-- Modal Anime Detalhes -->
+<dialog id="animeDialog">
+  <div class="modal-header">
+    <h2 id="animeTitle"></h2>
+    <button class="close-btn" id="closeDialog">&times;</button>
   </div>
-  <ul id="episode-list"></ul>
-  <form method="dialog"><button>Fechar</button></form>
+  <p id="animeDescription"></p>
+  <div id="episodeList" class="episode-list"></div>
 </dialog>
 
-<div id="toast"></div>
+<!-- Modal Player -->
+<dialog id="playerDialog" class="player-dialog">
+  <div class="modal-header">
+    <h2 id="playerTitle">Reproduzindo...</h2>
+    <button class="close-btn" id="closePlayer">&times;</button>
+  </div>
+  <video id="animePlayer" controls crossorigin="anonymous" referrerpolicy="no-referrer">
+    <source id="videoSource" src="" type="video/mp4">
+    Seu navegador não suporta vídeo HTML5.
+  </video>
+</dialog>
 
 <script>
-const animeListEl = document.getElementById('anime-list');
-const counterEl = document.getElementById('counter');
-const searchInput = document.getElementById('search-input');
-const clearBtn = document.getElementById('clear-btn');
-const dialog = document.getElementById('anime-dialog');
-const modalTitle = document.getElementById('modal-title');
-const modalDesc = document.getElementById('modal-desc');
-const modalYear = document.getElementById('modal-year');
-const modalSeasonCount = document.getElementById('modal-season-count');
-const modalEpCount = document.getElementById('modal-ep-count');
-const dialogCapa = document.getElementById('dialog-capa');
-const episodeList = document.getElementById('episode-list');
-const filterYear = document.getElementById('filter-year');
-const toast = document.getElementById('toast');
+  const animeGrid = document.getElementById('animeGrid');
+  const searchInput = document.getElementById('searchInput');
+  const animeDialog = document.getElementById('animeDialog');
+  const closeDialog = document.getElementById('closeDialog');
+  const playerDialog = document.getElementById('playerDialog');
+  const closePlayer = document.getElementById('closePlayer');
+  const animePlayer = document.getElementById('animePlayer');
+  const videoSource = document.getElementById('videoSource');
 
-let animes = [];
-let episodios = [];
-let temporadas = [];
-let animeAtual = null;
-let favoritos = JSON.parse(localStorage.getItem("favoritos")) || [];
-let vistos = JSON.parse(localStorage.getItem("vistos")) || [];
-
-async function carregarDados() {
-  const [resA, resE, resT] = await Promise.all([
-    fetch('https://anime-aniverso.vercel.app/animes.json'),
-    fetch('https://anime-aniverso.vercel.app/episodios.json'),
-    fetch('https://anime-aniverso.vercel.app/temporadas.json')
-  ]);
-  animes = await resA.json();
-  episodios = await resE.json();
-  temporadas = await resT.json();
-  preencherFiltroAno();
-  exibirAnimes(animes);
-}
-
-function preencherFiltroAno() {
-  const anos = [...new Set(animes.map(a => a.ano).filter(Boolean))].sort((a,b) => b-a);
-  anos.forEach(ano => {
-    const opt = document.createElement("option");
-    opt.value = ano; opt.textContent = ano;
-    filterYear.appendChild(opt);
-  });
-}
-
-function exibirAnimes(lista) {
-  animeListEl.innerHTML = '';
-  if (lista.length === 0) {
-    animeListEl.innerHTML = `<p style="text-align:center">⚠ Nenhum anime encontrado.</p>`;
-    counterEl.textContent = "Total: 0 animes";
-    return;
-  }
-  lista.forEach(anime => {
-    const card = document.createElement('div');
-    card.className = 'anime-card';
-    card.innerHTML = `
-      <button class="favorite-btn ${favoritos.includes(anime.id) ? "active" : ""}" title="Favoritar">❤</button>
-      <img loading="lazy" src="${anime.capa}" alt="${anime.nome}">
-      <h2>${anime.nome}</h2>
-      <p>ID: ${anime.id}</p>
-      <p>${anime.ano || ""}</p>`;
-    card.querySelector(".favorite-btn").addEventListener("click", e => {
-      e.stopPropagation();
-      toggleFavorito(anime.id, e.target);
-    });
-    card.addEventListener('click', () => abrirDialogo(anime));
-    animeListEl.appendChild(card);
-  });
-  counterEl.textContent = `Total: ${lista.length} animes`;
-}
-
-function abrirDialogo(anime) {
-  animeAtual = anime;
-  modalTitle.textContent = anime.nome;
-  modalDesc.textContent = anime.descricao || 'Sem descrição';
-  modalYear.textContent = `Ano: ${anime.ano || 'Desconhecido'}`;
-  dialogCapa.src = anime.capa;
-  dialogCapa.alt = `Capa do anime ${anime.nome}`;
-
-  const seas = temporadas.filter(s => String(s.anime_id) === String(anime.id));
-  modalSeasonCount.textContent = `Temporadas: ${seas.length}`;
-
-  episodeList.innerHTML = '';
-  let totalEps = 0;
-
-  seas.forEach(season => {
-    const details = document.createElement('details');
-    const summary = document.createElement('summary');
-    summary.textContent = `${season.nome} (${season.total_episodios || 0} eps)`;
-    details.appendChild(summary);
-
-    const eps = episodios.filter(ep => String(ep.temporada_id) === String(season.id));
-    totalEps += eps.length;
-
-    eps.forEach(ep => {
-      const li = document.createElement('li');
-      const epNome = ep.nome || "Sem título";
-      let links = [];
-      if (ep.legendado) links.push(`<a href="${ep.legendado}" target="_blank">Legendado</a>`);
-      if (ep.dublado) links.push(`<a href="${ep.dublado}" target="_blank">Dublado</a>`);
-      li.innerHTML = `${epNome} ${links.join(" | ")}`;
-
-      // histórico
-      if (vistos.includes(ep.id)) {
-        const span = document.createElement("span");
-        span.textContent = "Visto ✅";
-        span.className = "watched";
-        li.appendChild(span);
-      } else {
-        const markBtn = document.createElement("button");
-        markBtn.textContent = "✔";
-        markBtn.style.background = "green";
-        markBtn.style.border = "none";
-        markBtn.style.borderRadius = "4px";
-        markBtn.style.cursor = "pointer";
-        markBtn.onclick = () => marcarVisto(ep.id, li);
-        li.appendChild(markBtn);
+  let animes = [
+    {
+      id: 1,
+      nome: "Naruto",
+      descricao: "A história de um ninja em busca de reconhecimento.",
+      capa: "https://upload.wikimedia.org/wikipedia/pt/9/94/NarutoCoverTankobon1.jpg",
+      temporadas: {
+        "Temporada 1": {
+          total_episodios: 2,
+          episodios: {
+            "Episódio 1": { nome: "O Início", link: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-576p.mp4" },
+            "Episódio 2": { nome: "Primeira Missão", link: "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-720p.mp4" }
+          }
+        }
       }
+    }
+  ];
 
-      details.appendChild(li);
+  function renderAnimes(lista) {
+    animeGrid.innerHTML = '';
+    lista.forEach(anime => {
+      const card = document.createElement('div');
+      card.classList.add('card');
+      card.innerHTML = `
+        <img src="${anime.capa}" alt="Capa de ${anime.nome}">
+        <h2>${anime.nome}</h2>
+      `;
+      card.addEventListener('click', () => abrirAnime(anime));
+      animeGrid.appendChild(card);
     });
-    episodeList.appendChild(details);
+  }
+
+  function abrirAnime(anime) {
+    document.getElementById('animeTitle').textContent = anime.nome;
+    document.getElementById('animeDescription').textContent = anime.descricao;
+    const episodeList = document.getElementById('episodeList');
+    episodeList.innerHTML = '';
+
+    for (const [seasonName, season] of Object.entries(anime.temporadas)) {
+      const seasonDiv = document.createElement('div');
+      seasonDiv.innerHTML = `<h3>${seasonName} (${season.total_episodios} episódios)</h3>`;
+      for (const [epName, ep] of Object.entries(season.episodios)) {
+        const epBtn = document.createElement('button');
+        epBtn.classList.add('episode-btn');
+        epBtn.textContent = `${epName}: ${ep.nome}`;
+        epBtn.addEventListener('click', () => abrirPlayer(ep.nome, ep.link));
+        seasonDiv.appendChild(epBtn);
+      }
+      episodeList.appendChild(seasonDiv);
+    }
+
+    animeDialog.showModal();
+  }
+
+  function abrirPlayer(nome, link) {
+    document.getElementById('playerTitle').textContent = nome;
+    videoSource.src = link;
+    animePlayer.load();
+    animeDialog.close();
+    playerDialog.showModal();
+  }
+
+  closeDialog.addEventListener('click', () => animeDialog.close());
+  closePlayer.addEventListener('click', () => {
+    animePlayer.pause();
+    playerDialog.close();
   });
 
-  modalEpCount.textContent = `Episódios: ${totalEps}`;
-  dialog.showModal();
-}
+  searchInput.addEventListener('input', () => {
+    const termo = searchInput.value.toLowerCase();
+    const resultado = animes.filter(a => a.nome.toLowerCase().includes(termo) || String(a.id).includes(termo));
+    renderAnimes(resultado);
+  });
 
-function toggleFavorito(id, btn) {
-  if (favoritos.includes(id)) {
-    favoritos = favoritos.filter(f => f !== id);
-    btn.classList.remove("active");
-    mostrarToast("❌ Removido dos favoritos");
-  } else {
-    favoritos.push(id);
-    btn.classList.add("active");
-    mostrarToast("❤️ Adicionado aos favoritos");
-  }
-  localStorage.setItem("favoritos", JSON.stringify(favoritos));
-}
-
-function marcarVisto(id, li) {
-  vistos.push(id);
-  localStorage.setItem("vistos", JSON.stringify(vistos));
-  li.querySelector("button").remove();
-  const span = document.createElement("span");
-  span.textContent = "Visto ✅";
-  span.className = "watched";
-  li.appendChild(span);
-  mostrarToast("👀 Episódio marcado como visto");
-}
-
-function mostrarToast(msg) {
-  toast.textContent = msg;
-  toast.className = "show";
-  setTimeout(() => toast.className = "", 2000);
-}
-
-// Filtros
-function normalizarTexto(txt){return txt?txt.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase():"";}
-function aplicarFiltros() {
-  const termo = normalizarTexto(searchInput.value.trim());
-  const ano = filterYear.value;
-  let lista = animes.filter(a =>
-    (!termo || normalizarTexto(a.nome).includes(termo) || String(a.id).includes(termo)) &&
-    (!ano || String(a.ano) === ano)
-  );
-  exibirAnimes(lista);
-}
-searchInput.addEventListener("input", aplicarFiltros);
-filterYear.addEventListener("change", aplicarFiltros);
-clearBtn.addEventListener("click", ()=>{searchInput.value=""; filterYear.value=""; exibirAnimes(animes);});
-
-carregarDados();
+  renderAnimes(animes);
 </script>
 </body>
 </html>
