@@ -8,55 +8,57 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
-body { font-family: 'Open Sans', sans-serif; background: #141414; color: #fff; margin: 0; }
-header { text-align: center; padding: 20px; background: linear-gradient(to bottom, #000, transparent); }
-header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: #e50914; letter-spacing: 2px; }
+/* RESET & BASE */
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Open Sans', sans-serif; background: #141414; color: #fff; }
+a { text-decoration:none; color: inherit; }
+button { font-family: inherit; cursor: pointer; }
+ul { list-style: none; }
 
-#search-container { text-align: center; margin: 20px; }
-#search-input { padding: 10px; font-size: 16px; width: 250px; border-radius: 4px; border: none; }
-#filter-year { padding: 10px; font-size: 16px; margin-left: 5px; border-radius: 4px; border: none; }
-button { padding: 10px 15px; font-size: 16px; margin-left: 5px; cursor: pointer; background: #e50914; color: #fff; border: none; border-radius: 4px; transition: .3s; }
-button:hover { background: #f40612; }
-#counter { text-align: center; margin-bottom: 20px; font-size: 18px; font-weight: bold; }
+/* HEADER */
+header { text-align:center; padding:20px; background: linear-gradient(to bottom, #000, transparent); }
+header h1 { font-family: 'Bebas Neue', sans-serif; font-size:48px; color:#e50914; letter-spacing:2px; }
 
-.anime-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; padding: 20px; }
-.anime-card { background: #181818; border-radius: 8px; cursor: pointer; transition: transform .3s, box-shadow .3s; position: relative; }
-.anime-card:hover { transform: scale(1.08); box-shadow: 0 0 20px rgba(255,0,0,0.5); }
-.anime-card img { width: 100%; height: 270px; object-fit: cover; border-radius: 8px 8px 0 0; }
-.anime-card h2 { font-family: 'Bebas Neue', sans-serif; margin: 10px; font-size: 18px; color: #fff; }
-.anime-card p { font-size: 13px; margin: 5px 10px; color: #aaa; }
-.favorite-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; }
-.favorite-btn.active { color: #e50914; }
+/* SEARCH */
+#search-container { text-align:center; margin:20px; }
+#search-input, #filter-year { padding:10px; font-size:16px; border-radius:4px; border:none; }
+#filter-year { margin-left:5px; }
+#clear-btn { padding:10px 15px; margin-left:5px; background:#e50914; color:#fff; border:none; border-radius:4px; transition:.3s; }
+#clear-btn:hover { background:#f40612; }
+#counter, #favorites-count { text-align:center; margin-bottom:10px; font-size:18px; font-weight:bold; }
 
-dialog { background: #181818; color: #fff; border: none; border-radius: 10px; padding: 20px; width: 90%; max-width: 800px; }
-dialog::backdrop { background: rgba(0,0,0,0.85); }
-#dialog-header { display: flex; gap: 20px; flex-wrap: wrap; }
-#dialog-header img { width: 200px; border-radius: 5px; }
-#dialog-info { flex: 1; }
-#dialog-info h2 { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: #e50914; margin: 0; }
-#episode-list { margin-top: 20px; padding: 0; }
-#episode-list details { background: #222; margin-bottom: 8px; border-radius: 6px; padding: 6px; }
-#episode-list summary { cursor: pointer; font-weight: bold; }
-#episode-list li { padding: 5px 15px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
-#episode-list li a { color: #fff; text-decoration: none; }
-#episode-list li a:hover { text-decoration: underline; }
-.watched { color: #0f0; font-size: 13px; margin-left: 8px; }
-form[method="dialog"] { margin-top: 15px; text-align: right; }
+/* ANIME LIST */
+.anime-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:15px; padding:20px; }
+.anime-card { background:#181818; border-radius:8px; cursor:pointer; transition: transform .3s, box-shadow .3s; position:relative; overflow:hidden; }
+.anime-card:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,0,0,0.6); }
+.anime-card img { width:100%; height:270px; object-fit:cover; border-radius:8px 8px 0 0; display:block; }
+.anime-card h2 { font-family: 'Bebas Neue', sans-serif; margin:10px; font-size:18px; color:#fff; }
+.anime-card p { font-size:13px; margin:5px 10px; color:#aaa; }
+.favorite-btn { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.7); border:none; border-radius:50%; width:32px; height:32px; font-size:18px; display:flex; align-items:center; justify-content:center; }
+.favorite-btn.active { color:#e50914; }
 
-/* Toast */
-#toast {
-  position: fixed; bottom: 20px; right: 20px;
-  background: #333; color: #fff;
-  padding: 10px 15px; border-radius: 6px;
-  opacity: 0; transition: opacity .4s;
-}
-#toast.show { opacity: 1; }
+/* DIALOG */
+dialog { background:#181818; color:#fff; border:none; border-radius:10px; padding:20px; width:90%; max-width:800px; max-height:90vh; overflow:auto; }
+dialog::backdrop { background:rgba(0,0,0,0.85); }
+#dialog-header { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+#dialog-header img { width:200px; border-radius:5px; }
+#dialog-info { flex:1; }
+#dialog-info h2 { font-family:'Bebas Neue'; font-size:30px; color:#e50914; margin-bottom:10px; }
+#episode-list { margin-top:20px; padding:0; }
+#episode-list details { background:#222; margin-bottom:8px; border-radius:6px; padding:6px; }
+#episode-list summary { cursor:pointer; font-weight:bold; font-size:14px; }
+#episode-list li { padding:5px 15px; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
+#episode-list li a { color:#fff; }
+#episode-list li a:hover { text-decoration:underline; }
+.watched { color:#0f0; font-size:13px; margin-left:8px; }
+form[method="dialog"] { margin-top:15px; text-align:right; }
 
-/* Responsivo */
-@media (max-width: 600px) {
-  #dialog-header { flex-direction: column; align-items: center; }
-  #dialog-header img { width: 150px; }
-}
+/* TOAST */
+#toast { position:fixed; bottom:20px; right:20px; background:#333; color:#fff; padding:10px 15px; border-radius:6px; opacity:0; transition:opacity .4s; z-index:999; }
+#toast.show { opacity:1; }
+
+/* RESPONSIVO */
+@media(max-width:600px){ #dialog-header { flex-direction:column; align-items:center; } #dialog-header img{ width:150px; } }
 </style>
 </head>
 <body>
@@ -65,11 +67,12 @@ form[method="dialog"] { margin-top: 15px; text-align: right; }
 
 <section id="search-container">
   <input type="text" id="search-input" placeholder="Pesquisar anime..." aria-label="Pesquisar anime">
-  <select id="filter-year"><option value="">Ano</option></select>
-  <button id="clear-btn">Limpar</button>
+  <select id="filter-year" aria-label="Filtrar por ano"><option value="">Ano</option></select>
+  <button id="clear-btn" aria-label="Limpar filtros">Limpar</button>
 </section>
 
-<div id="counter"></div>
+<div id="counter">Total: 0 animes</div>
+<div id="favorites-count">Favoritos: 0</div>
 <section id="anime-list" class="anime-list"></section>
 
 <dialog id="anime-dialog">
@@ -84,7 +87,7 @@ form[method="dialog"] { margin-top: 15px; text-align: right; }
     </div>
   </div>
   <ul id="episode-list"></ul>
-  <form method="dialog"><button>Fechar</button></form>
+  <form method="dialog"><button aria-label="Fechar modal">Fechar</button></form>
 </dialog>
 
 <div id="toast"></div>
@@ -92,6 +95,7 @@ form[method="dialog"] { margin-top: 15px; text-align: right; }
 <script>
 const animeListEl = document.getElementById('anime-list');
 const counterEl = document.getElementById('counter');
+const favoritesCountEl = document.getElementById('favorites-count');
 const searchInput = document.getElementById('search-input');
 const clearBtn = document.getElementById('clear-btn');
 const dialog = document.getElementById('anime-dialog');
@@ -105,15 +109,14 @@ const episodeList = document.getElementById('episode-list');
 const filterYear = document.getElementById('filter-year');
 const toast = document.getElementById('toast');
 
-let animes = [];
-let episodios = [];
-let temporadas = [];
-let animeAtual = null;
+let animes = [], episodios = [], temporadas = [], animeAtual = null;
 let favoritos = JSON.parse(localStorage.getItem("favoritos")) || [];
 let vistos = JSON.parse(localStorage.getItem("vistos")) || [];
 
-async function carregarDados() {
-  const [resA, resE, resT] = await Promise.all([
+function atualizarFavoritosContagem(){ favoritesCountEl.textContent = `Favoritos: ${favoritos.length}`; }
+
+async function carregarDados(){
+  const [resA,resE,resT] = await Promise.all([
     fetch('https://anime-aniverso.vercel.app/animes.json'),
     fetch('https://anime-aniverso.vercel.app/episodios.json'),
     fetch('https://anime-aniverso.vercel.app/temporadas.json')
@@ -125,142 +128,97 @@ async function carregarDados() {
   exibirAnimes(animes);
 }
 
-function preencherFiltroAno() {
-  const anos = [...new Set(animes.map(a => a.ano).filter(Boolean))].sort((a,b) => b-a);
-  anos.forEach(ano => {
-    const opt = document.createElement("option");
-    opt.value = ano; opt.textContent = ano;
-    filterYear.appendChild(opt);
+function preencherFiltroAno(){
+  const anos = [...new Set(animes.map(a=>a.ano).filter(Boolean))].sort((a,b)=>b-a);
+  anos.forEach(ano=>{
+    const opt=document.createElement("option"); opt.value=ano; opt.textContent=ano; filterYear.appendChild(opt);
   });
 }
 
-function exibirAnimes(lista) {
+function exibirAnimes(lista){
   animeListEl.innerHTML = '';
-  if (lista.length === 0) {
-    animeListEl.innerHTML = `<p style="text-align:center">⚠ Nenhum anime encontrado.</p>`;
-    counterEl.textContent = "Total: 0 animes";
-    return;
-  }
-  lista.forEach(anime => {
-    const card = document.createElement('div');
-    card.className = 'anime-card';
-    card.innerHTML = `
-      <button class="favorite-btn ${favoritos.includes(anime.id) ? "active" : ""}" title="Favoritar">❤</button>
+  if(!lista.length){ animeListEl.innerHTML=`<p style="text-align:center">⚠ Nenhum anime encontrado.</p>`; counterEl.textContent="Total: 0 animes"; return; }
+  lista.forEach(anime=>{
+    const card=document.createElement('div'); card.className='anime-card';
+    card.innerHTML=`
+      <button class="favorite-btn ${favoritos.includes(anime.id)?"active":""}" title="Favoritar" aria-label="Favoritar anime">❤</button>
       <img loading="lazy" src="${anime.capa}" alt="${anime.nome}">
       <h2>${anime.nome}</h2>
       <p>ID: ${anime.id}</p>
-      <p>${anime.ano || ""}</p>`;
-    card.querySelector(".favorite-btn").addEventListener("click", e => {
-      e.stopPropagation();
-      toggleFavorito(anime.id, e.target);
+      <p>${anime.ano||""}</p>`;
+    card.querySelector(".favorite-btn").addEventListener("click", e=>{
+      e.stopPropagation(); toggleFavorito(anime.id,e.target);
     });
-    card.addEventListener('click', () => abrirDialogo(anime));
+    card.addEventListener('click',()=>abrirDialogo(anime));
     animeListEl.appendChild(card);
   });
-  counterEl.textContent = `Total: ${lista.length} animes`;
+  counterEl.textContent=`Total: ${lista.length} animes`;
+  atualizarFavoritosContagem();
 }
 
-function abrirDialogo(anime) {
-  animeAtual = anime;
-  modalTitle.textContent = anime.nome;
-  modalDesc.textContent = anime.descricao || 'Sem descrição';
-  modalYear.textContent = `Ano: ${anime.ano || 'Desconhecido'}`;
-  dialogCapa.src = anime.capa;
-  dialogCapa.alt = `Capa do anime ${anime.nome}`;
-
-  const seas = temporadas.filter(s => String(s.anime_id) === String(anime.id));
-  modalSeasonCount.textContent = `Temporadas: ${seas.length}`;
-
-  episodeList.innerHTML = '';
-  let totalEps = 0;
-
-  seas.forEach(season => {
-    const details = document.createElement('details');
-    const summary = document.createElement('summary');
-    summary.textContent = `${season.nome} (${season.total_episodios || 0} eps)`;
+function abrirDialogo(anime){
+  animeAtual=anime;
+  modalTitle.textContent=anime.nome;
+  modalDesc.textContent=anime.descricao||'Sem descrição';
+  modalYear.textContent=`Ano: ${anime.ano||'Desconhecido'}`;
+  dialogCapa.src=anime.capa; dialogCapa.alt=`Capa do anime ${anime.nome}`;
+  const seas=temporadas.filter(s=>String(s.anime_id)===String(anime.id));
+  modalSeasonCount.textContent=`Temporadas: ${seas.length}`;
+  episodeList.innerHTML=''; let totalEps=0;
+  seas.forEach(season=>{
+    const details=document.createElement('details');
+    const summary=document.createElement('summary'); summary.textContent=`${season.nome} (${season.total_episodios||0} eps)`;
     details.appendChild(summary);
-
-    const eps = episodios.filter(ep => String(ep.temporada_id) === String(season.id));
-    totalEps += eps.length;
-
-    eps.forEach(ep => {
-      const li = document.createElement('li');
-      const epNome = ep.nome || "Sem título";
-      let links = [];
-      if (ep.legendado) links.push(`<a href="${ep.legendado}" target="_blank">Legendado</a>`);
-      if (ep.dublado) links.push(`<a href="${ep.dublado}" target="_blank">Dublado</a>`);
-      li.innerHTML = `${epNome} ${links.join(" | ")}`;
-
-      // histórico
-      if (vistos.includes(ep.id)) {
-        const span = document.createElement("span");
-        span.textContent = "Visto ✅";
-        span.className = "watched";
-        li.appendChild(span);
+    const eps=episodios.filter(ep=>String(ep.temporada_id)===String(season.id));
+    totalEps+=eps.length;
+    eps.forEach(ep=>{
+      const li=document.createElement('li'); const epNome=ep.nome||"Sem título";
+      let links=[];
+      if(ep.legendado) links.push(`<a href="${ep.legendado}" target="_blank" rel="noopener noreferrer">Legendado</a>`);
+      if(ep.dublado) links.push(`<a href="${ep.dublado}" target="_blank" rel="noopener noreferrer">Dublado</a>`);
+      li.innerHTML=`${epNome} ${links.join(" | ")}`;
+      if(vistos.includes(ep.id)){
+        const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span);
       } else {
-        const markBtn = document.createElement("button");
-        markBtn.textContent = "✔";
-        markBtn.style.background = "green";
-        markBtn.style.border = "none";
-        markBtn.style.borderRadius = "4px";
-        markBtn.style.cursor = "pointer";
-        markBtn.onclick = () => marcarVisto(ep.id, li);
-        li.appendChild(markBtn);
+        const markBtn=document.createElement("button"); markBtn.textContent="✔"; markBtn.style.background="green"; markBtn.style.border="none"; markBtn.style.borderRadius="4px"; markBtn.style.cursor="pointer";
+        markBtn.onclick=()=>marcarVisto(ep.id,li); li.appendChild(markBtn);
       }
-
       details.appendChild(li);
     });
     episodeList.appendChild(details);
   });
-
-  modalEpCount.textContent = `Episódios: ${totalEps}`;
+  modalEpCount.textContent=`Episódios: ${totalEps}`;
   dialog.showModal();
 }
 
-function toggleFavorito(id, btn) {
-  if (favoritos.includes(id)) {
-    favoritos = favoritos.filter(f => f !== id);
-    btn.classList.remove("active");
-    mostrarToast("❌ Removido dos favoritos");
-  } else {
-    favoritos.push(id);
-    btn.classList.add("active");
-    mostrarToast("❤️ Adicionado aos favoritos");
-  }
-  localStorage.setItem("favoritos", JSON.stringify(favoritos));
+// FECHAR MODAL AO CLICAR FORA
+dialog.addEventListener('click', e => { if(e.target === dialog) dialog.close(); });
+
+function toggleFavorito(id,btn){
+  if(favoritos.includes(id)){ favoritos=favoritos.filter(f=>f!==id); btn.classList.remove("active"); mostrarToast("❌ Removido dos favoritos"); }
+  else{ favoritos.push(id); btn.classList.add("active"); mostrarToast("❤️ Adicionado aos favoritos"); }
+  localStorage.setItem("favoritos",JSON.stringify(favoritos)); atualizarFavoritosContagem();
 }
 
-function marcarVisto(id, li) {
-  vistos.push(id);
-  localStorage.setItem("vistos", JSON.stringify(vistos));
+function marcarVisto(id,li){
+  vistos.push(id); localStorage.setItem("vistos",JSON.stringify(vistos));
   li.querySelector("button").remove();
-  const span = document.createElement("span");
-  span.textContent = "Visto ✅";
-  span.className = "watched";
-  li.appendChild(span);
+  const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span);
   mostrarToast("👀 Episódio marcado como visto");
 }
 
-function mostrarToast(msg) {
-  toast.textContent = msg;
-  toast.className = "show";
-  setTimeout(() => toast.className = "", 2000);
-}
+function mostrarToast(msg){ toast.textContent=msg; toast.className="show"; setTimeout(()=>toast.className="",2000); }
 
-// Filtros
-function normalizarTexto(txt){return txt?txt.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase():"";}
-function aplicarFiltros() {
-  const termo = normalizarTexto(searchInput.value.trim());
-  const ano = filterYear.value;
-  let lista = animes.filter(a =>
-    (!termo || normalizarTexto(a.nome).includes(termo) || String(a.id).includes(termo)) &&
-    (!ano || String(a.ano) === ano)
-  );
+// FILTROS
+function normalizarTexto(txt){ return txt?txt.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase():""; }
+function aplicarFiltros(){
+  const termo=normalizarTexto(searchInput.value.trim()), ano=filterYear.value;
+  const lista=animes.filter(a=>(!termo||normalizarTexto(a.nome).includes(termo)||String(a.id).includes(termo))&&(!ano||String(a.ano)===ano));
   exibirAnimes(lista);
 }
-searchInput.addEventListener("input", aplicarFiltros);
-filterYear.addEventListener("change", aplicarFiltros);
-clearBtn.addEventListener("click", ()=>{searchInput.value=""; filterYear.value=""; exibirAnimes(animes);});
+searchInput.addEventListener("input",aplicarFiltros);
+filterYear.addEventListener("change",aplicarFiltros);
+clearBtn.addEventListener("click",()=>{ searchInput.value=""; filterYear.value=""; exibirAnimes(animes); });
 
 carregarDados();
 </script>
