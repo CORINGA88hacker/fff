@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Super Netflix de Animes</title>
+<title>Super Netflix de Animes Pro</title>
 <meta name="theme-color" content="#e50914">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* RESET & BASE */
+/* RESET E BASE */
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Open Sans',sans-serif;background:#141414;color:#fff;}
 a{text-decoration:none;color:inherit;}
@@ -16,8 +16,7 @@ ul{list-style:none;}
 
 /* HEADER */
 header{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:linear-gradient(to bottom,#000,transparent);}
-header h1{font-family:'Bebas Neue',sans-serif;font-size:48px;color:#e50914;letter-spacing:2px;}
-#tab-buttons{margin-top:10px;}
+header h1{font-family:'Bebas Neue',sans-serif;font-size:48px;color:#e50914;letter-spacing:2px;margin-bottom:10px;}
 #tab-buttons button{margin:0 5px;padding:8px 12px;background:#e50914;color:#fff;border:none;border-radius:4px;transition:.3s;}
 #tab-buttons button.active,#tab-buttons button:hover{background:#f40612;}
 
@@ -70,7 +69,7 @@ form[method="dialog"]{margin-top:15px;text-align:right;}
 <body>
 
 <header>
-<h1>Lista de Animes</h1>
+<h1>Super Netflix de Animes</h1>
 <div id="tab-buttons">
 <button id="all-tab" class="active">Todos</button>
 <button id="fav-tab">Favoritos</button>
@@ -131,8 +130,6 @@ const nextBtn=document.getElementById('next-anime');
 
 let animes=[],episodios=[],temporadas=[],animeAtual=null,favoritos=JSON.parse(localStorage.getItem("favoritos"))||[],vistos=JSON.parse(localStorage.getItem("vistos"))||[],animeIndex=0,displayedList=[];
 
-// =================== FUNÇÕES ===================
-
 function atualizarFavoritosContagem(){favoritesCountEl.textContent=`Favoritos: ${favoritos.length}`;}
 
 async function carregarDados(){
@@ -186,7 +183,6 @@ counterEl.textContent=`Total: ${lista.length} animes`;
 atualizarFavoritosContagem();
 }
 
-// =================== MODAL ===================
 function abrirDialogo(anime){
 animeAtual=anime; animeIndex=displayedList.findIndex(a=>a.id===anime.id);
 modalTitle.textContent=anime.nome; modalDesc.textContent=anime.descricao||'Sem descrição';
@@ -219,26 +215,22 @@ details.appendChild(li);
 });
 }
 
-// =================== FAVORITOS & VISTOS ===================
 function toggleFavorito(id,btn){
 if(favoritos.includes(id)){favoritos=favoritos.filter(f=>f!==id);btn.classList.remove("active");mostrarToast("❌ Removido dos favoritos");}
 else{favoritos.push(id);btn.classList.add("active");mostrarToast("❤️ Adicionado aos favoritos");}
-localStorage.setItem("favoritos",JSON.stringify(favoritos)); atualizarFavoritosContagem();}
+localStorage.setItem("favoritos",JSON.stringify(favoritos)); atualizarFavoritosContagem();
+}
 
 function marcarVisto(id,li){vistos.push(id); localStorage.setItem("vistos",JSON.stringify(vistos)); li.querySelector("button").remove(); const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span); mostrarToast("👀 Episódio marcado como visto");}
 
-// =================== TOAST ===================
 function mostrarToast(msg){toast.textContent=msg; toast.className="show"; setTimeout(()=>toast.className="",2000);}
 
-// =================== NAVEGAÇÃO MODAL ===================
 prevBtn.addEventListener("click",()=>{if(animeIndex>0)abrirDialogo(displayedList[animeIndex-1]);});
 nextBtn.addEventListener("click",()=>{if(animeIndex<displayedList.length-1)abrirDialogo(displayedList[animeIndex+1]);});
 
-// FECHAR MODAL CLICANDO FORA E COM ESC
 dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")dialog.close();});
 
-// =================== FILTROS & TABS ===================
 searchInput.addEventListener("input",aplicarFiltros);
 filterYear.addEventListener("change",aplicarFiltros);
 clearBtn.addEventListener("click",()=>{searchInput.value=""; filterYear.value=""; aplicarFiltros();});
@@ -246,7 +238,6 @@ clearBtn.addEventListener("click",()=>{searchInput.value=""; filterYear.value=""
 allTab.addEventListener("click",()=>{allTab.classList.add("active"); favTab.classList.remove("active"); aplicarFiltros();});
 favTab.addEventListener("click",()=>{favTab.classList.add("active"); allTab.classList.remove("active"); aplicarFiltros();});
 
-// =================== CARREGAR DADOS ===================
 carregarDados();
 </script>
 </body>
