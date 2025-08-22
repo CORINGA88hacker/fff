@@ -10,7 +10,7 @@
       background: #121212;
       color: #eee;
       padding: 20px;
-      max-width: 900px;
+      max-width: 1000px;
       margin: auto;
     }
     h1 {
@@ -53,12 +53,21 @@
       cursor: pointer;
       width: 100%;
     }
-    #copyBtn {
+    #copyBtn, #downloadBtn {
       background-color: #4caf50;
       margin-top: 10px;
       width: auto;
       padding: 10px 18px;
       font-size: 1rem;
+    }
+    .copy-ep-btn {
+      background-color: #2196f3;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      color: white;
+      border: none;
+      cursor: pointer;
     }
     pre {
       background: #222;
@@ -84,6 +93,20 @@
       display: none;
       text-align: center;
     }
+    .episodio {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+    .episodio h3 {
+      margin: 0 0 10px 0;
+      color: #ffa64d;
+    }
+    .episodio input {
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
@@ -99,12 +122,17 @@
       <option value="en-US">en-US</option>
     </select>
 
-    <button type="button" id="btnFetch">Gerar JSON dos Episódios</button>
+    <button type="button" id="btnFetch">Buscar Episódios</button>
   </form>
 
   <div id="errorMsg" class="error"></div>
+
+  <div id="episodiosContainer"></div>
+
+  <button id="btnGerarJSON" style="display:none;">Gerar JSON Final</button>
   <pre id="jsonOutput"></pre>
-  <button id="copyBtn" style="display:none;">Copiar JSON</button>
+  <button id="copyBtn" style="display:none;">Copiar JSON Geral</button>
+  <button id="downloadBtn" style="display:none;">Baixar JSON</button>
   <div id="copyFeedback">JSON copiado para a área de transferência!</div>
 
   <script>
@@ -115,8 +143,13 @@
     const tmdbInput = document.getElementById('tmdbId');
     const langSelect = document.getElementById('language');
     const btnFetch = document.getElementById('btnFetch');
+    const episodiosContainer = document.getElementById('episodiosContainer');
+    const btnGerarJSON = document.getElementById('btnGerarJSON');
     const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
     const copyFeedback = document.getElementById('copyFeedback');
+
+    let episodiosTodos = [];
 
     async function fetchJSON(url) {
       const res = await fetch(url, {
@@ -137,8 +170,10 @@
     btnFetch.addEventListener('click', async () => {
       errorMsg.textContent = "";
       output.textContent = "";
+      episodiosContainer.innerHTML = "";
       copyBtn.style.display = "none";
-      copyFeedback.style.display = "none";
+      downloadBtn.style.display = "none";
+      btnGerarJSON.style.display = "none";
 
       const tmdbId = tmdbInput.value.trim();
       if (!tmdbId) {
@@ -154,7 +189,7 @@
           return;
         }
 
-        const episodiosTodos = [];
+        episodiosTodos = [];
 
         for (const temporada of serie.seasons) {
           if (temporada.season_number === 0) continue;
@@ -163,7 +198,7 @@
           const epRunTime = serie.episode_run_time && serie.episode_run_time.length > 0 ? serie.episode_run_time[0].toString() : "";
 
           for (const ep of detalhes.episodes) {
-            episodiosTodos.push({
+            const episodio = {
               id: `${tmdbId}-${temporada.season_number}-${ep.episode_number}`,
               nome: ep.name || "",
               numero: ep.episode_number,
@@ -179,26 +214,80 @@
               data_atualizacao: new Date().toISOString(),
               comeco: "",
               final: ""
-            });
+            };
+
+            episodiosTodos.push(episodio);
+
+            const div = document.createElement("div");
+            div.className = "episodio";
+            div.innerHTML = `
+              <h3>Temporada ${temporada.season_number} - Episódio ${ep.episode_number}: ${ep.name}</h3>
+              <label>Legendado:</label>
+              <input type="text" placeholder="Link legendado" data-id="${episodio.id}" data-type="legendado">
+              <label>Dublado:</label>
+              <input type="text" placeholder="Link dublado" data-id="${episodio.id}" data-type="dublado">
+              <button class="copy-ep-btn" data-id="${episodio.id}">Copiar JSON deste episódio</button>
+            `;
+            episodiosContainer.appendChild(div);
           }
         }
 
-        output.textContent = JSON.stringify(episodiosTodos, null, 2);
-        copyBtn.style.display = "inline-block";
+        btnGerarJSON.style.display = "block";
+
       } catch (e) {
         errorMsg.textContent = e.message;
       }
+    });
+
+    btnGerarJSON.addEventListener('click', () => {
+      // Atualizar links
+      document.querySelectorAll("#episodiosContainer input").forEach(input => {
+        const ep = episodiosTodos.find(e => e.id === input.dataset.id);
+        if (ep) ep[input.dataset.type] = input.value.trim();
+      });
+
+      output.textContent = JSON.stringify(episodiosTodos, null, 2);
+      copyBtn.style.display = "inline-block";
+      downloadBtn.style.display = "inline-block";
     });
 
     copyBtn.addEventListener('click', () => {
       const jsonText = output.textContent;
       if (!jsonText) return;
       navigator.clipboard.writeText(jsonText).then(() => {
+        copyFeedback.textContent = "JSON geral copiado!";
         copyFeedback.style.display = "block";
-        setTimeout(() => {
-          copyFeedback.style.display = "none";
-        }, 2000);
+        setTimeout(() => copyFeedback.style.display = "none", 2000);
       });
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([output.textContent], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "episodios.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Copiar JSON de episódio individual
+    episodiosContainer.addEventListener('click', (e) => {
+      if (e.target.classList.contains('copy-ep-btn')) {
+        const epId = e.target.dataset.id;
+        const ep = episodiosTodos.find(ev => ev.id === epId);
+        if (ep) {
+          // Atualiza legendado/dublado antes de copiar
+          const inputs = e.target.parentElement.querySelectorAll("input");
+          inputs.forEach(input => ep[input.dataset.type] = input.value.trim());
+
+          navigator.clipboard.writeText(JSON.stringify(ep, null, 2)).then(() => {
+            copyFeedback.textContent = `JSON do episódio ${ep.numero} copiado!`;
+            copyFeedback.style.display = "block";
+            setTimeout(() => copyFeedback.style.display = "none", 2000);
+          });
+        }
+      }
     });
   </script>
 </body>
