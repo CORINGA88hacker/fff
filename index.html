@@ -25,7 +25,10 @@ header h1{font-family:'Bebas Neue',sans-serif;font-size:48px;color:#e50914;lette
 #filter-year{margin-left:5px;}
 #clear-btn{padding:10px 15px;margin-left:5px;background:#e50914;color:#fff;border:none;border-radius:4px;transition:.3s;}
 #clear-btn:hover{background:#f40612;}
-#counter,#favorites-count{text-align:center;margin:5px 0;font-size:16px;font-weight:bold;}
+
+/* COUNTERS */
+#counters{display:flex;flex-wrap:wrap;justify-content:center;gap:15px;margin:10px 0;font-size:16px;font-weight:bold;text-align:center;}
+#counters div{background:#181818;padding:6px 12px;border-radius:6px;}
 
 /* ANIME LIST */
 .anime-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;padding:20px;}
@@ -69,48 +72,57 @@ form[method="dialog"]{margin-top:15px;text-align:right;}
 <body>
 
 <header>
-<h1>Super Netflix de Animes</h1>
-<div id="tab-buttons">
-<button id="all-tab" class="active">Todos</button>
-<button id="fav-tab">Favoritos</button>
-</div>
+  <h1>Super Netflix de Animes</h1>
+  <div id="tab-buttons">
+    <button id="all-tab" class="active">Todos</button>
+    <button id="anime-tab">Animes</button>
+    <button id="movie-tab">Filmes</button>
+    <button id="fav-tab">Favoritos</button>
+  </div>
 </header>
 
 <section id="search-container">
-<input type="text" id="search-input" placeholder="Pesquisar anime..." aria-label="Pesquisar anime">
-<select id="filter-year" aria-label="Filtrar por ano"><option value="">Ano</option></select>
-<button id="clear-btn" aria-label="Limpar filtros">Limpar</button>
+  <input type="text" id="search-input" placeholder="Pesquisar..." aria-label="Pesquisar">
+  <select id="filter-year" aria-label="Filtrar por ano"><option value="">Ano</option></select>
+  <button id="clear-btn" aria-label="Limpar filtros">Limpar</button>
 </section>
 
-<div id="counter">Total: 0 animes</div>
-<div id="favorites-count">Favoritos: 0</div>
+<div id="counters">
+  <div id="anime-count">Animes: 0</div>
+  <div id="movie-count">Filmes: 0</div>
+  <div id="favorites-count">Favoritos: 0</div>
+  <div id="total-count">Total: 0</div>
+</div>
+
 <section id="anime-list" class="anime-list"></section>
 
 <dialog id="anime-dialog">
-<div id="dialog-header">
-<img id="dialog-capa" src="" alt="Capa do anime">
-<div id="dialog-info">
-<h2 id="modal-title"></h2>
-<p id="modal-desc"></p>
-<p id="modal-year"></p>
-<p id="modal-season-count"></p>
-<p id="modal-ep-count"></p>
-</div>
-</div>
-<ul id="episode-list"></ul>
-<div class="modal-nav">
-<button id="prev-anime">Anterior</button>
-<button id="next-anime">Próximo</button>
-</div>
-<form method="dialog"><button aria-label="Fechar modal">Fechar</button></form>
+  <div id="dialog-header">
+    <img id="dialog-capa" src="" alt="Capa">
+    <div id="dialog-info">
+      <h2 id="modal-title"></h2>
+      <p id="modal-desc"></p>
+      <p id="modal-year"></p>
+      <p id="modal-season-count"></p>
+      <p id="modal-ep-count"></p>
+    </div>
+  </div>
+  <ul id="episode-list"></ul>
+  <div class="modal-nav">
+    <button id="prev-anime">Anterior</button>
+    <button id="next-anime">Próximo</button>
+  </div>
+  <form method="dialog"><button aria-label="Fechar modal">Fechar</button></form>
 </dialog>
 
 <div id="toast"></div>
 
 <script>
 const animeListEl=document.getElementById('anime-list');
-const counterEl=document.getElementById('counter');
+const animeCountEl=document.getElementById('anime-count');
+const movieCountEl=document.getElementById('movie-count');
 const favoritesCountEl=document.getElementById('favorites-count');
+const totalCountEl=document.getElementById('total-count');
 const searchInput=document.getElementById('search-input');
 const clearBtn=document.getElementById('clear-btn');
 const dialog=document.getElementById('anime-dialog');
@@ -124,110 +136,153 @@ const episodeList=document.getElementById('episode-list');
 const filterYear=document.getElementById('filter-year');
 const toast=document.getElementById('toast');
 const allTab=document.getElementById('all-tab');
+const animeTab=document.getElementById('anime-tab');
+const movieTab=document.getElementById('movie-tab');
 const favTab=document.getElementById('fav-tab');
 const prevBtn=document.getElementById('prev-anime');
 const nextBtn=document.getElementById('next-anime');
 
-let animes=[],episodios=[],temporadas=[],animeAtual=null,favoritos=JSON.parse(localStorage.getItem("favoritos"))||[],vistos=JSON.parse(localStorage.getItem("vistos"))||[],animeIndex=0,displayedList=[];
+let animes=[],filmes=[],episodios=[],temporadas=[],
+    animeAtual=null,favoritos=JSON.parse(localStorage.getItem("favoritos"))||[],
+    vistos=JSON.parse(localStorage.getItem("vistos"))||[],
+    animeIndex=0,displayedList=[],currentType="all";
 
-function atualizarFavoritosContagem(){favoritesCountEl.textContent=`Favoritos: ${favoritos.length}`;}
+function atualizarContadores(){
+  animeCountEl.textContent=`Animes: ${animes.length}`;
+  movieCountEl.textContent=`Filmes: ${filmes.length}`;
+  favoritesCountEl.textContent=`Favoritos: ${favoritos.length}`;
+  totalCountEl.textContent=`Total: ${animes.length+filmes.length}`;
+}
 
 async function carregarDados(){
-const [resA,resE,resT]=await Promise.all([
-fetch('https://anime-aniverso.vercel.app/animes.json'),
-fetch('https://anime-aniverso.vercel.app/episodios.json'),
-fetch('https://anime-aniverso.vercel.app/temporadas.json')]);
-animes=await resA.json();
-episodios=await resE.json();
-temporadas=await resT.json();
-preencherFiltroAno();
-aplicarFiltros();
+  const [resA,resF,resE,resT]=await Promise.all([
+    fetch('https://anime-aniverso.vercel.app/animes.json'),
+    fetch('https://anime-aniverso.vercel.app/filmes.json'),
+    fetch('https://anime-aniverso.vercel.app/episodios.json'),
+    fetch('https://anime-aniverso.vercel.app/temporadas.json')
+  ]);
+  animes=await resA.json();
+  filmes=await resF.json();
+  episodios=await resE.json();
+  temporadas=await resT.json();
+  preencherFiltroAno();
+  aplicarFiltros();
+  atualizarContadores();
 }
 
 function preencherFiltroAno(){
-const anos=[...new Set(animes.map(a=>a.ano).filter(Boolean))].sort((a,b)=>b-a);
-anos.forEach(ano=>{const opt=document.createElement("option");opt.value=ano;opt.textContent=ano;filterYear.appendChild(opt);});
+  const anos=[...new Set([...animes,...filmes].map(a=>a.ano).filter(Boolean))].sort((a,b)=>b-a);
+  anos.forEach(ano=>{
+    const opt=document.createElement("option");
+    opt.value=ano; opt.textContent=ano;
+    filterYear.appendChild(opt);
+  });
 }
 
 function normalizar(txt){return txt?txt.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase():"";}
 
 function aplicarFiltros(){
-const termo=normalizar(searchInput.value.trim());
-const ano=filterYear.value;
-let lista=animes.filter(a=>(!termo||normalizar(a.nome).includes(termo)||String(a.id).includes(termo))&&(!ano||String(a.ano)===ano));
-if(favTab.classList.contains("active")) lista=lista.filter(a=>favoritos.includes(a.id));
-displayedList=lista; animeIndex=0;
-exibirAnimes(lista,true);
+  const termo=normalizar(searchInput.value.trim());
+  const ano=filterYear.value;
+  let lista=[];
+  if(currentType==="animes") lista=animes;
+  else if(currentType==="filmes") lista=filmes;
+  else lista=[...animes,...filmes];
+
+  lista=lista.filter(a=>
+    (!termo||normalizar(a.nome).includes(termo)||String(a.id).includes(termo))&&
+    (!ano||String(a.ano)===ano)
+  );
+
+  if(favTab.classList.contains("active")) lista=lista.filter(a=>favoritos.includes(a.id));
+  displayedList=lista; animeIndex=0;
+  exibirAnimes(lista,true);
 }
 
-function exibirAnimes(lista,scroll=false){
-if(!lista.length){animeListEl.innerHTML=`<p style="text-align:center">⚠ Nenhum anime encontrado.</p>`;counterEl.textContent="Total: 0 animes";return;}
-animeListEl.innerHTML='';
-const fragment=document.createDocumentFragment();
-lista.forEach((anime,i)=>{
-const card=document.createElement('div'); card.className='anime-card';
-let nomeHtml=anime.nome;
-const termo=normalizar(searchInput.value.trim());
-if(termo){const regex=new RegExp(`(${termo})`,"gi"); nomeHtml=nomeHtml.replace(regex,'<span class="highlight">$1</span>');}
-card.innerHTML=`<button class="favorite-btn ${favoritos.includes(anime.id)?"active":""}" title="Favoritar" aria-label="Favoritar anime">❤</button>
-<img loading="lazy" src="${anime.capa}" alt="${anime.nome}">
-<h2>${nomeHtml}</h2>
-<p>ID: ${anime.id}</p>
-<p>${anime.ano||""}</p>`;
-card.querySelector(".favorite-btn").addEventListener("click",e=>{e.stopPropagation();toggleFavorito(anime.id,e.target);});
-card.addEventListener('click',()=>abrirDialogo(anime));
-fragment.appendChild(card);
-});
-animeListEl.appendChild(fragment);
-counterEl.textContent=`Total: ${lista.length} animes`;
-atualizarFavoritosContagem();
+function exibirAnimes(lista){
+  if(!lista.length){animeListEl.innerHTML=`<p style="text-align:center">⚠ Nenhum encontrado.</p>`;return;}
+  animeListEl.innerHTML='';
+  const fragment=document.createDocumentFragment();
+  lista.forEach((item)=>{
+    const card=document.createElement('div'); card.className='anime-card';
+    let nomeHtml=item.nome;
+    const termo=normalizar(searchInput.value.trim());
+    if(termo){const regex=new RegExp(`(${termo})`,"gi"); nomeHtml=nomeHtml.replace(regex,'<span class="highlight">$1</span>');}
+    card.innerHTML=`<button class="favorite-btn ${favoritos.includes(item.id)?"active":""}" title="Favoritar">❤</button>
+    <img loading="lazy" src="${item.capa}" alt="${item.nome}">
+    <h2>${nomeHtml}</h2>
+    <p>ID: ${item.id}</p>
+    <p>${item.ano||""}</p>`;
+    card.querySelector(".favorite-btn").addEventListener("click",e=>{e.stopPropagation();toggleFavorito(item.id,e.target);});
+    card.addEventListener('click',()=>abrirDialogo(item));
+    fragment.appendChild(card);
+  });
+  animeListEl.appendChild(fragment);
 }
 
-function abrirDialogo(anime){
-animeAtual=anime; animeIndex=displayedList.findIndex(a=>a.id===anime.id);
-modalTitle.textContent=anime.nome; modalDesc.textContent=anime.descricao||'Sem descrição';
-modalYear.textContent=`Ano: ${anime.ano||'Desconhecido'}`; dialogCapa.src=anime.capa; dialogCapa.alt=`Capa do anime ${anime.nome}`;
-const seas=temporadas.filter(s=>String(s.anime_id)===String(anime.id));
-modalSeasonCount.textContent=`Temporadas: ${seas.length}`;
-episodeList.innerHTML=''; let totalEps=0;
-seas.forEach(season=>{
-const details=document.createElement('details');
-const summary=document.createElement('summary'); summary.textContent=`${season.nome} (${season.total_episodios||0} eps)`; details.appendChild(summary);
-summary.addEventListener("click",()=>renderEpisodios(details,season.id));
-episodeList.appendChild(details);
-});
-modalEpCount.textContent=`Episódios: ${seas.reduce((acc,s)=>acc+(episodios.filter(ep=>String(ep.temporada_id)===String(s.id))).length,0)}`;
-dialog.showModal(); dialog.focus();
+function abrirDialogo(item){
+  animeAtual=item; 
+  animeIndex=displayedList.findIndex(a=>a.id===item.id);
+  modalTitle.textContent=item.nome; 
+  modalDesc.textContent=item.descricao||'Sem descrição';
+  modalYear.textContent=`Ano: ${item.ano||'Desconhecido'}`; 
+  dialogCapa.src=item.capa; 
+  dialogCapa.alt=`Capa de ${item.nome}`;
+  modalSeasonCount.textContent=""; 
+  modalEpCount.textContent="";
+  episodeList.innerHTML='';
+
+  const isAnime=animes.some(a=>String(a.id)===String(item.id));
+  if(isAnime){
+    const seas=temporadas.filter(s=>String(s.anime_id)===String(item.id));
+    modalSeasonCount.textContent=`Temporadas: ${seas.length}`;
+    seas.forEach(season=>{
+      const details=document.createElement('details');
+      const summary=document.createElement('summary'); 
+      summary.textContent=`${season.nome} (${season.total_episodios||0} eps)`; 
+      details.appendChild(summary);
+      summary.addEventListener("click",()=>renderEpisodios(details,season.id));
+      episodeList.appendChild(details);
+    });
+    modalEpCount.textContent=`Episódios: ${seas.reduce((acc,s)=>acc+(episodios.filter(ep=>String(ep.temporada_id)===String(s.id))).length,0)}`;
+  } else {
+    modalSeasonCount.textContent="Tipo: Filme";
+  }
+
+  dialog.showModal(); dialog.focus();
 }
 
 function renderEpisodios(details,seasonId){
-if(details.dataset.rendered)return; details.dataset.rendered=true;
-const eps=episodios.filter(ep=>String(ep.temporada_id)===String(seasonId));
-eps.forEach(ep=>{
-const li=document.createElement("li"); const epNome=ep.nome||"Sem título"; let links=[];
-if(ep.legendado) links.push(`<a href="${ep.legendado}" target="_blank" rel="noopener noreferrer">Legendado</a>`);
-if(ep.dublado) links.push(`<a href="${ep.dublado}" target="_blank" rel="noopener noreferrer">Dublado</a>`);
-li.innerHTML=`${epNome} ${links.join(" | ")}`;
-if(vistos.includes(ep.id)){const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span);}
-else{const markBtn=document.createElement("button"); markBtn.textContent="✔"; markBtn.style.background="green"; markBtn.style.border="none"; markBtn.style.borderRadius="4px"; markBtn.style.cursor="pointer";
-markBtn.onclick=()=>marcarVisto(ep.id,li); li.appendChild(markBtn);}
-details.appendChild(li);
-});
+  if(details.dataset.rendered)return; details.dataset.rendered=true;
+  const eps=episodios.filter(ep=>String(ep.temporada_id)===String(seasonId));
+  eps.forEach(ep=>{
+    const li=document.createElement("li"); const epNome=ep.nome||"Sem título"; let links=[];
+    if(ep.legendado) links.push(`<a href="${ep.legendado}" target="_blank">Legendado</a>`);
+    if(ep.dublado) links.push(`<a href="${ep.dublado}" target="_blank">Dublado</a>`);
+    li.innerHTML=`${epNome} ${links.join(" | ")}`;
+    if(vistos.includes(ep.id)){const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span);}
+    else{const markBtn=document.createElement("button"); markBtn.textContent="✔"; markBtn.style.background="green"; markBtn.style.border="none"; markBtn.style.borderRadius="4px"; markBtn.style.cursor="pointer";
+    markBtn.onclick=()=>marcarVisto(ep.id,li); li.appendChild(markBtn);}
+    details.appendChild(li);
+  });
 }
 
 function toggleFavorito(id,btn){
-if(favoritos.includes(id)){favoritos=favoritos.filter(f=>f!==id);btn.classList.remove("active");mostrarToast("❌ Removido dos favoritos");}
-else{favoritos.push(id);btn.classList.add("active");mostrarToast("❤️ Adicionado aos favoritos");}
-localStorage.setItem("favoritos",JSON.stringify(favoritos)); atualizarFavoritosContagem();
+  if(favoritos.includes(id)){favoritos=favoritos.filter(f=>f!==id);btn.classList.remove("active");mostrarToast("❌ Removido dos favoritos");}
+  else{favoritos.push(id);btn.classList.add("active");mostrarToast("❤️ Adicionado aos favoritos");}
+  localStorage.setItem("favoritos",JSON.stringify(favoritos)); atualizarContadores();
 }
 
-function marcarVisto(id,li){vistos.push(id); localStorage.setItem("vistos",JSON.stringify(vistos)); li.querySelector("button").remove(); const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span); mostrarToast("👀 Episódio marcado como visto");}
+function marcarVisto(id,li){
+  vistos.push(id); localStorage.setItem("vistos",JSON.stringify(vistos));
+  li.querySelector("button").remove(); const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span);
+  mostrarToast("👀 Episódio marcado como visto");
+}
 
 function mostrarToast(msg){toast.textContent=msg; toast.className="show"; setTimeout(()=>toast.className="",2000);}
 
 prevBtn.addEventListener("click",()=>{if(animeIndex>0)abrirDialogo(displayedList[animeIndex-1]);});
 nextBtn.addEventListener("click",()=>{if(animeIndex<displayedList.length-1)abrirDialogo(displayedList[animeIndex+1]);});
-
 dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")dialog.close();});
 
@@ -235,8 +290,10 @@ searchInput.addEventListener("input",aplicarFiltros);
 filterYear.addEventListener("change",aplicarFiltros);
 clearBtn.addEventListener("click",()=>{searchInput.value=""; filterYear.value=""; aplicarFiltros();});
 
-allTab.addEventListener("click",()=>{allTab.classList.add("active"); favTab.classList.remove("active"); aplicarFiltros();});
-favTab.addEventListener("click",()=>{favTab.classList.add("active"); allTab.classList.remove("active"); aplicarFiltros();});
+allTab.addEventListener("click",()=>{currentType="all";allTab.classList.add("active");animeTab.classList.remove("active");movieTab.classList.remove("active");favTab.classList.remove("active");aplicarFiltros();});
+animeTab.addEventListener("click",()=>{currentType="animes";animeTab.classList.add("active");allTab.classList.remove("active");movieTab.classList.remove("active");favTab.classList.remove("active");aplicarFiltros();});
+movieTab.addEventListener("click",()=>{currentType="filmes";movieTab.classList.add("active");allTab.classList.remove("active");animeTab.classList.remove("active");favTab.classList.remove("active");aplicarFiltros();});
+favTab.addEventListener("click",()=>{favTab.classList.add("active");allTab.classList.remove("active");animeTab.classList.remove("active");movieTab.classList.remove("active");aplicarFiltros();});
 
 carregarDados();
 </script>
