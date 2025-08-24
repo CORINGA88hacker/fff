@@ -3,86 +3,242 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gerador JSON Temporadas (Séries)</title>
+<title>Super Netflix de Animes Pro Max</title>
+<meta name="theme-color" content="#e50914">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
-body { font-family: Arial, sans-serif; background: #121212; color: #fff; padding: 20px; }
-label { display: block; margin-top: 10px; }
-input, textarea, button { margin-top: 5px; padding: 10px; border-radius: 5px; border: none; width: 100%; box-sizing: border-box; }
-input, textarea { background: #222; color: #fff; }
-button { background: #e50914; color: #fff; font-weight: bold; cursor: pointer; }
-button:hover { background: #b00610; }
-textarea { height: 300px; font-family: monospace; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Open Sans',sans-serif;background:#141414;color:#fff;}
+a{text-decoration:none;color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+ul{list-style:none;}
+
+/* HEADER */
+header{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:linear-gradient(to bottom,#000,transparent);}
+header h1{font-family:'Bebas Neue',sans-serif;font-size:48px;color:#e50914;letter-spacing:2px;margin-bottom:10px;}
+#tab-buttons button{margin:0 5px;padding:8px 12px;background:#e50914;color:#fff;border:none;border-radius:4px;transition:.3s;}
+#tab-buttons button.active,#tab-buttons button:hover{background:#f40612;}
+
+/* SEARCH */
+#search-container{text-align:center;margin:15px;}
+#search-input,#filter-year{padding:10px;font-size:16px;border-radius:4px;border:none;}
+#filter-year{margin-left:5px;}
+#clear-btn{padding:10px 15px;margin-left:5px;background:#e50914;color:#fff;border:none;border-radius:4px;transition:.3s;}
+#clear-btn:hover{background:#f40612;}
+#counter,#favorites-count{text-align:center;margin:5px 0;font-size:16px;font-weight:bold;}
+
+/* ANIME LIST */
+.anime-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px;padding:20px;}
+.anime-card{background:#181818;border-radius:8px;cursor:pointer;transition:transform .3s,box-shadow .3s;position:relative;overflow:hidden;}
+.anime-card:hover{transform:scale(1.05);box-shadow:0 0 25px rgba(255,0,0,0.6);}
+.anime-card img{width:100%;height:270px;object-fit:cover;border-radius:8px 8px 0 0;display:block;}
+.anime-card h2{font-family:'Bebas Neue',sans-serif;margin:10px;font-size:18px;color:#fff;}
+.anime-card p{font-size:13px;margin:5px 10px;color:#aaa;}
+.favorite-btn{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.7);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;display:flex;align-items:center;justify-content:center;transition:.3s;}
+.favorite-btn.active{color:#e50914;animation:pulse 0.5s;}
+@keyframes pulse{0%{transform:scale(1);}50%{transform:scale(1.3);}100%{transform:scale(1);}}
+
+/* DIALOG */
+dialog{background:#181818;color:#fff;border:none;border-radius:10px;padding:20px;width:90%;max-width:800px;max-height:90vh;overflow:auto;transition:all .3s;}
+dialog::backdrop{background:rgba(0,0,0,0.85);}
+#dialog-header{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;}
+#dialog-header img{width:200px;border-radius:5px;}
+#dialog-info{flex:1;}
+#dialog-info h2{font-family:'Bebas Neue';font-size:30px;color:#e50914;margin-bottom:10px;}
+#episode-list{margin-top:20px;padding:0;}
+#episode-list details{background:#222;margin-bottom:8px;border-radius:6px;padding:6px;}
+#episode-list summary{cursor:pointer;font-weight:bold;font-size:14px;}
+#episode-list li{padding:5px 15px;font-size:14px;display:flex;justify-content:space-between;align-items:center;}
+#episode-list li a{color:#fff;}
+#episode-list li a:hover{text-decoration:underline;}
+.watched{color:#0f0;font-size:13px;margin-left:8px;}
+.modal-nav{display:flex;justify-content:space-between;margin-top:10px;}
+.modal-nav button{background:#e50914;color:#fff;border:none;padding:6px 12px;border-radius:4px;transition:.3s;}
+.modal-nav button:hover{background:#f40612;}
+form[method="dialog"]{margin-top:15px;text-align:right;}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:20px;background:#333;color:#fff;padding:10px 15px;border-radius:6px;opacity:0;transition:opacity .4s;z-index:999;}
+#toast.show{opacity:1;}
+
+/* RESPONSIVO */
+@media(max-width:600px){#dialog-header{flex-direction:column;align-items:center;}#dialog-header img{width:150px;}}
+.highlight{background:yellow;color:#000;}
 </style>
 </head>
 <body>
 
-<h2>Gerador JSON - Temporadas de Série</h2>
+<header>
+<h1>Super Netflix de Animes</h1>
+<div id="tab-buttons">
+<button id="all-tab" class="active">Todos</button>
+<button id="fav-tab">Favoritos</button>
+</div>
+</header>
 
-<label>Digite o TMDb ID da Série:</label>
-<input type="text" id="serieId" placeholder="Ex: 75214">
+<section id="search-container">
+<input type="text" id="search-input" placeholder="Pesquisar anime..." aria-label="Pesquisar anime">
+<select id="filter-year" aria-label="Filtrar por ano"><option value="">Ano</option></select>
+<button id="clear-btn" aria-label="Limpar filtros">Limpar</button>
+</section>
 
-<button onclick="gerarTemporadas()">Gerar JSON das Temporadas</button>
+<div id="counter">Total: 0 animes</div>
+<div id="favorites-count">Favoritos: 0</div>
+<section id="anime-list" class="anime-list"></section>
 
-<textarea id="jsonOutput" readonly placeholder="O JSON aparecerá aqui..."></textarea>
-<button onclick="copiarJSON()">📋 Copiar JSON</button>
+<dialog id="anime-dialog">
+<div id="dialog-header">
+<img id="dialog-capa" src="" alt="Capa do anime">
+<div id="dialog-info">
+<h2 id="modal-title"></h2>
+<p id="modal-desc"></p>
+<p id="modal-year"></p>
+<p id="modal-season-count"></p>
+<p id="modal-ep-count"></p>
+</div>
+</div>
+<ul id="episode-list"></ul>
+<div class="modal-nav">
+<button id="prev-anime">Anterior</button>
+<button id="next-anime">Próximo</button>
+</div>
+<form method="dialog"><button aria-label="Fechar modal">Fechar</button></form>
+</dialog>
+
+<div id="toast"></div>
 
 <script>
-const TMDB_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiZjZhMGEzMjhmOWY2NzY5MzZmNDBiZjRmYmIyY2U5YSIsIm5iZiI6MTY4MjcwODQzNi44NTY5OTk5LCJzdWIiOiI2NDRjMTdkNDUxYTY0ZTA4OGFkZDY4MmEiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.k4rE_75eOyG6BWcYCAa2sbcGHVpsX9UTH4Y5NVoQ0L4";
+const animeListEl=document.getElementById('anime-list');
+const counterEl=document.getElementById('counter');
+const favoritesCountEl=document.getElementById('favorites-count');
+const searchInput=document.getElementById('search-input');
+const clearBtn=document.getElementById('clear-btn');
+const dialog=document.getElementById('anime-dialog');
+const modalTitle=document.getElementById('modal-title');
+const modalDesc=document.getElementById('modal-desc');
+const modalYear=document.getElementById('modal-year');
+const modalSeasonCount=document.getElementById('modal-season-count');
+const modalEpCount=document.getElementById('modal-ep-count');
+const dialogCapa=document.getElementById('dialog-capa');
+const episodeList=document.getElementById('episode-list');
+const filterYear=document.getElementById('filter-year');
+const toast=document.getElementById('toast');
+const allTab=document.getElementById('all-tab');
+const favTab=document.getElementById('fav-tab');
+const prevBtn=document.getElementById('prev-anime');
+const nextBtn=document.getElementById('next-anime');
 
-async function gerarTemporadas() {
-  const serieId = document.getElementById("serieId").value.trim();
-  if (!serieId) return alert("Digite o TMDb ID da série!");
+let animes=[],episodios=[],temporadas=[],animeAtual=null,favoritos=JSON.parse(localStorage.getItem("favoritos"))||[],vistos=JSON.parse(localStorage.getItem("vistos"))||[],animeIndex=0,displayedList=[];
 
-  try {
-    // Pega dados da série
-    const serieRes = await fetch(`https://api.themoviedb.org/3/tv/${serieId}?language=pt-BR`, {
-      headers: { Authorization: `Bearer ${TMDB_TOKEN}` }
-    });
-    if (!serieRes.ok) throw new Error("Erro ao buscar série");
-    const serieData = await serieRes.json();
+function atualizarFavoritosContagem(){favoritesCountEl.textContent=`Favoritos: ${favoritos.length}`;}
 
-    const temporadasJSON = [];
-
-    for (const season of serieData.seasons.filter(s => s.season_number > 0)) {
-      const seasonRes = await fetch(`https://api.themoviedb.org/3/tv/${serieId}/season/${season.season_number}?language=pt-BR`, {
-        headers: { Authorization: `Bearer ${TMDB_TOKEN}` }
-      });
-      if (!seasonRes.ok) continue;
-      const data = await seasonRes.json();
-
-      const temporadaJSON = {
-        id: `${serieId}-${season.season_number}`,
-        nome: data.name || `Temporada ${season.season_number}`,
-        numero: data.season_number,
-        descricao: data.overview || "Sem descrição",
-        ano: data.air_date ? data.air_date.split("-")[0] : "",
-        capa: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : "",
-        anime_id: `${serieId}-${season.season_number}`,
-        total_episodios: data.episodes?.length || 0,
-        tmdb_id: `${serieId}-${season.season_number}`,
-        data_criacao: data.air_date || new Date().toISOString(),
-        data_atualizacao: new Date().toISOString(),
-        coluna: ""
-      };
-
-      temporadasJSON.push(temporadaJSON);
-    }
-
-    document.getElementById("jsonOutput").value = JSON.stringify(temporadasJSON, null, 2);
-
-  } catch (err) {
-    alert("Erro: " + err.message);
-  }
+async function carregarDados(){
+const [resA,resE,resT]=await Promise.all([
+fetch('https://anime-aniverso.vercel.app/animes.json'),
+fetch('https://anime-aniverso.vercel.app/episodios.json'),
+fetch('https://anime-aniverso.vercel.app/temporadas.json')]);
+animes=await resA.json();
+episodios=await resE.json();
+temporadas=await resT.json();
+preencherFiltroAno();
+aplicarFiltros();
 }
 
-function copiarJSON() {
-  const output = document.getElementById("jsonOutput");
-  if (!output.value) return alert("Nada para copiar!");
-  output.select();
-  document.execCommand("copy");
-  alert("JSON copiado!");
+function preencherFiltroAno(){
+const anos=[...new Set(animes.map(a=>a.ano).filter(Boolean))].sort((a,b)=>b-a);
+anos.forEach(ano=>{const opt=document.createElement("option");opt.value=ano;opt.textContent=ano;filterYear.appendChild(opt);});
 }
+
+function normalizar(txt){return txt?txt.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase():"";}
+
+function aplicarFiltros(){
+const termo=normalizar(searchInput.value.trim());
+const ano=filterYear.value;
+let lista=animes.filter(a=>(!termo||normalizar(a.nome).includes(termo)||String(a.id).includes(termo))&&(!ano||String(a.ano)===ano));
+if(favTab.classList.contains("active")) lista=lista.filter(a=>favoritos.includes(a.id));
+displayedList=lista; animeIndex=0;
+exibirAnimes(lista,true);
+}
+
+function exibirAnimes(lista,scroll=false){
+if(!lista.length){animeListEl.innerHTML=`<p style="text-align:center">⚠ Nenhum anime encontrado.</p>`;counterEl.textContent="Total: 0 animes";return;}
+animeListEl.innerHTML='';
+const fragment=document.createDocumentFragment();
+lista.forEach((anime,i)=>{
+const card=document.createElement('div'); card.className='anime-card';
+let nomeHtml=anime.nome;
+const termo=normalizar(searchInput.value.trim());
+if(termo){const regex=new RegExp(`(${termo})`,"gi"); nomeHtml=nomeHtml.replace(regex,'<span class="highlight">$1</span>');}
+card.innerHTML=`<button class="favorite-btn ${favoritos.includes(anime.id)?"active":""}" title="Favoritar" aria-label="Favoritar anime">❤</button>
+<img loading="lazy" src="${anime.capa}" alt="${anime.nome}">
+<h2>${nomeHtml}</h2>
+<p>ID: ${anime.id}</p>
+<p>${anime.ano||""}</p>`;
+card.querySelector(".favorite-btn").addEventListener("click",e=>{e.stopPropagation();toggleFavorito(anime.id,e.target);});
+card.addEventListener('click',()=>abrirDialogo(anime));
+fragment.appendChild(card);
+});
+animeListEl.appendChild(fragment);
+counterEl.textContent=`Total: ${lista.length} animes`;
+atualizarFavoritosContagem();
+}
+
+function abrirDialogo(anime){
+animeAtual=anime; animeIndex=displayedList.findIndex(a=>a.id===anime.id);
+modalTitle.textContent=anime.nome; modalDesc.textContent=anime.descricao||'Sem descrição';
+modalYear.textContent=`Ano: ${anime.ano||'Desconhecido'}`; dialogCapa.src=anime.capa; dialogCapa.alt=`Capa do anime ${anime.nome}`;
+const seas=temporadas.filter(s=>String(s.anime_id)===String(anime.id));
+modalSeasonCount.textContent=`Temporadas: ${seas.length}`;
+episodeList.innerHTML=''; let totalEps=0;
+seas.forEach(season=>{
+const details=document.createElement('details');
+const summary=document.createElement('summary'); summary.textContent=`${season.nome} (${season.total_episodios||0} eps)`; details.appendChild(summary);
+summary.addEventListener("click",()=>renderEpisodios(details,season.id));
+episodeList.appendChild(details);
+});
+modalEpCount.textContent=`Episódios: ${seas.reduce((acc,s)=>acc+(episodios.filter(ep=>String(ep.temporada_id)===String(s.id))).length,0)}`;
+dialog.showModal(); dialog.focus();
+}
+
+function renderEpisodios(details,seasonId){
+if(details.dataset.rendered)return; details.dataset.rendered=true;
+const eps=episodios.filter(ep=>String(ep.temporada_id)===String(seasonId));
+eps.forEach(ep=>{
+const li=document.createElement("li"); const epNome=ep.nome||"Sem título"; let links=[];
+if(ep.legendado) links.push(`<a href="${ep.legendado}" target="_blank" rel="noopener noreferrer">Legendado</a>`);
+if(ep.dublado) links.push(`<a href="${ep.dublado}" target="_blank" rel="noopener noreferrer">Dublado</a>`);
+li.innerHTML=`${epNome} ${links.join(" | ")}`;
+if(vistos.includes(ep.id)){const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span);}
+else{const markBtn=document.createElement("button"); markBtn.textContent="✔"; markBtn.style.background="green"; markBtn.style.border="none"; markBtn.style.borderRadius="4px"; markBtn.style.cursor="pointer";
+markBtn.onclick=()=>marcarVisto(ep.id,li); li.appendChild(markBtn);}
+details.appendChild(li);
+});
+}
+
+function toggleFavorito(id,btn){
+if(favoritos.includes(id)){favoritos=favoritos.filter(f=>f!==id);btn.classList.remove("active");mostrarToast("❌ Removido dos favoritos");}
+else{favoritos.push(id);btn.classList.add("active");mostrarToast("❤️ Adicionado aos favoritos");}
+localStorage.setItem("favoritos",JSON.stringify(favoritos)); atualizarFavoritosContagem();
+}
+
+function marcarVisto(id,li){vistos.push(id); localStorage.setItem("vistos",JSON.stringify(vistos)); li.querySelector("button").remove(); const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span); mostrarToast("👀 Episódio marcado como visto");}
+
+function mostrarToast(msg){toast.textContent=msg; toast.className="show"; setTimeout(()=>toast.className="",2000);}
+
+prevBtn.addEventListener("click",()=>{if(animeIndex>0)abrirDialogo(displayedList[animeIndex-1]);});
+nextBtn.addEventListener("click",()=>{if(animeIndex<displayedList.length-1)abrirDialogo(displayedList[animeIndex+1]);});
+
+dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")dialog.close();});
+
+searchInput.addEventListener("input",aplicarFiltros);
+filterYear.addEventListener("change",aplicarFiltros);
+clearBtn.addEventListener("click",()=>{searchInput.value=""; filterYear.value=""; aplicarFiltros();});
+
+allTab.addEventListener("click",()=>{allTab.classList.add("active"); favTab.classList.remove("active"); aplicarFiltros();});
+favTab.addEventListener("click",()=>{favTab.classList.add("active"); allTab.classList.remove("active"); aplicarFiltros();});
+
+carregarDados();
 </script>
-
 </body>
 </html>
