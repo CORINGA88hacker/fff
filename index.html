@@ -19,7 +19,7 @@ textarea { height: 300px; font-family: monospace; }
 <h2>Gerador JSON - Todas Temporadas</h2>
 
 <label>Digite o TMDb ID da Série:</label>
-<input type="text" id="serieId" placeholder="Ex: 31132">
+<input type="text" id="serieId" placeholder="Ex: 75214">
 
 <button onclick="gerarTodasTemporadas()">Gerar JSON</button>
 
@@ -57,11 +57,12 @@ async function gerarTodasTemporadas() {
         descricao: data.overview || "Sem descrição",
         ano: data.air_date ? data.air_date.split("-")[0] : "",
         capa: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : "",
-        anime_id: serieId,
+        anime_id: `${serieId}-${season.season_number}`,
         total_episodios: data.episodes?.length || 0,
         tmdb_id: `${serieId}-${season.season_number}`,
         data_criacao: data.air_date || new Date().toISOString(),
-        data_atualizacao: new Date().toISOString()
+        data_atualizacao: new Date().toISOString(),
+        coluna: ""
       };
 
       temporadasJSON.push(temporadaJSON);
