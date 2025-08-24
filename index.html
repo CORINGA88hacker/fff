@@ -2,216 +2,146 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Gerador JSON TMDb</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalhes da Série</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #121212; color: #f1f1f1; }
-    label { display: block; margin-top: 10px; }
-    input, select, button, textarea { margin-top: 5px; padding: 8px; width: 100%; border-radius: 5px; border: none; }
-    button { cursor: pointer; margin-top: 10px; background: #2196F3; color: #fff; }
-    button:hover { background: #0b7dda; }
-    textarea { height: 400px; font-family: monospace; }
-    .row { display: flex; gap: 10px; margin-top: 20px; }
-    .row button { flex: 1; }
-    #errorMsg { color: red; margin-top: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d0d0d;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-size: cover;
+      background-position: center;
+      height: 300px;
+      display: flex;
+      align-items: flex-end;
+      padding: 20px;
+    }
+    header h1 {
+      background: rgba(0,0,0,0.6);
+      padding: 10px 20px;
+      border-radius: 10px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+    .capa {
+      float: left;
+      margin-right: 20px;
+    }
+    .capa img {
+      border-radius: 10px;
+      max-width: 200px;
+    }
+    .info {
+      overflow: hidden;
+    }
+    pre {
+      background: #111;
+      color: #0f0;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-top: 30px;
+    }
   </style>
 </head>
 <body>
-  <h2>Gerador JSON - TMDb (Séries & Filmes)</h2>
 
-  <label>API Key (TMDb):</label>
-  <input type="text" id="apiKeyInput" placeholder="Digite sua API Key TMDb">
+  <header id="banner">
+    <h1 id="titulo">Carregando...</h1>
+  </header>
 
-  <label>TMDb ID:</label>
-  <input type="text" id="tmdbInput" placeholder="Digite o ID do TMDb">
+  <div class="container">
+    <div class="capa">
+      <img id="capa" src="" alt="Capa da Série">
+    </div>
+    <div class="info">
+      <h2 id="tituloOriginal"></h2>
+      <p><strong>Gênero:</strong> <span id="genero"></span></p>
+      <p><strong>Ano:</strong> <span id="ano"></span></p>
+      <p><strong>Status:</strong> <span id="status"></span></p>
+      <p><strong>País:</strong> <span id="pais"></span></p>
+      <p><strong>Duração episódio:</strong> <span id="duracao"></span> min</p>
+      <p><strong>Popularidade:</strong> <span id="popularidade"></span></p>
+      <p><strong>Descrição:</strong> <span id="descricao"></span></p>
+    </div>
 
-  <label>Ou Nome (busca automática):</label>
-  <input type="text" id="tmdbNameInput" placeholder="Digite o nome da Série ou Filme">
-
-  <label>Idioma:</label>
-  <select id="languageSelect">
-    <option value="pt-BR">Português (Brasil)</option>
-    <option value="en-US">Inglês</option>
-  </select>
-
-  <label>Coluna:</label>
-  <input type="text" id="colunaInput" placeholder="Nome da coluna (ex: netflix, hbo)">
-
-  <div class="row">
-    <button type="button" id="btnSerie">Extrair JSON da Série</button>
-    <button type="button" id="btnFilme">Extrair JSON do Filme</button>
+    <h3>JSON Gerado:</h3>
+    <pre id="json"></pre>
   </div>
-
-  <div class="row">
-    <button type="button" id="copyBtn">Copiar JSON</button>
-    <button type="button" id="downloadBtn">Baixar JSON</button>
-  </div>
-
-  <p id="errorMsg"></p>
-  <textarea id="output" readonly></textarea>
 
   <script>
-    const tmdbInput = document.getElementById("tmdbInput");
-    const tmdbNameInput = document.getElementById("tmdbNameInput");
-    const languageSelect = document.getElementById("languageSelect");
-    const colunaInput = document.getElementById("colunaInput");
-    const btnSerie = document.getElementById("btnSerie");
-    const btnFilme = document.getElementById("btnFilme");
-    const output = document.getElementById("output");
-    const errorMsg = document.getElementById("errorMsg");
+    const apiKey = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiZjZhMGEzMjhmOWY2NzY5MzZmNDBiZjRmYmIyY2U5YSIsIm5iZiI6MTY4MjcwODQzNi44NTY5OTk5LCJzdWIiOiI2NDRjMTdkNDUxYTY0ZTA4OGFkZDY4MmEiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.k4rE_75eOyG6BWcYCAa2sbcGHVpsX9UTH4Y5NVoQ0L4";
 
-    const statusMap = {
-      "Returning Series": "Em exibição",
-      "Ended": "Finalizada",
-      "Canceled": "Cancelada",
-      "Planned": "Planejada",
-      "In Production": "Em produção",
-      "Released": "Lançado"
-    };
+    async function fetchSerie(tmdbId) {
+      const url = `https://api.themoviedb.org/3/tv/${tmdbId}?language=pt-BR&append_to_response=external_ids`;
 
-    function getApiKey() {
-      return document.getElementById("apiKeyInput").value.trim();
-    }
-
-    function traduzirGeneros(genres) {
-      if (!genres) return [];
-      return genres.map(g => g.name);
-    }
-
-    function traduzirClassificacao(adult) {
-      return adult ? "18+" : "Livre";
-    }
-
-    async function fetchJSON(url) {
-      const key = getApiKey();
-      if (!key) throw new Error("Digite sua API Key TMDb.");
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }});
-      if (!res.ok) throw new Error("Erro ao buscar dados da API TMDb");
-      return await res.json();
-    }
-
-    async function buscarSerie(id, lang) {
-      return await fetchJSON(`https://api.themoviedb.org/3/tv/${id}?language=${lang}`);
-    }
-
-    async function buscarFilme(id, lang) {
-      return await fetchJSON(`https://api.themoviedb.org/3/movie/${id}?language=${lang}`);
-    }
-
-    async function procurarId(nome, tipo, lang) {
-      let url = `https://api.themoviedb.org/3/search/${tipo}?query=${encodeURIComponent(nome)}&language=${lang}`;
-      let data = await fetchJSON(url);
-      if (data.results && data.results.length > 0) return data.results[0].id;
-
-      // fallback en-US
-      if (lang !== "en-US") {
-        url = `https://api.themoviedb.org/3/search/${tipo}?query=${encodeURIComponent(nome)}&language=en-US`;
-        data = await fetchJSON(url);
-        if (data.results && data.results.length > 0) return data.results[0].id;
-      }
-
-      throw new Error(`${tipo === "tv" ? "Série" : "Filme"} não encontrado.`);
-    }
-
-    function mostrarJSON(obj) {
-      output.textContent = JSON.stringify(obj, null, 2);
-      output.select();
-    }
-
-    // Série
-    btnSerie.addEventListener("click", async () => {
-      errorMsg.textContent = "";
-      output.textContent = "";
-      const lang = languageSelect.value;
-      const coluna = colunaInput.value.trim();
-      try {
-        let id = tmdbInput.value.trim();
-        const nome = tmdbNameInput.value.trim();
-        if (!id && nome) id = await procurarId(nome, "tv", lang);
-        if (!id) throw new Error("Digite o ID ou nome da série.");
-        const data = await buscarSerie(id, lang);
-        const jsonSerie = {
-          id: id,
-          nome: data.name || "",
-          titulo_original: data.original_name || "",
-          genero: traduzirGeneros(data.genres),
-          descricao: data.overview || "",
-          ano: (data.first_air_date || "").slice(0,4),
-          status: statusMap[data.status] || data.status || "",
-          pais: (data.origin_country && data.origin_country.length > 0) ? data.origin_country[0] : "",
-          temporadas: data.number_of_seasons || 0,
-          episodios: data.number_of_episodes || 0,
-          classificacao: traduzirClassificacao(data.adult || false),
-          popularidade: data.popularity?.toFixed(4) || "",
-          capa: data.poster_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.poster_path}` : "",
-          banner: data.backdrop_path ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}` : "",
-          tmdb_id: id,
-          data_criacao: data.first_air_date || "",
-          data_atualizacao: new Date().toISOString(),
-          coluna: coluna,
-          linguagem: data.original_language || "",
-          qualidade: "HD"
-        };
-        mostrarJSON(jsonSerie);
-      } catch(err) { errorMsg.textContent = err.message; }
-    });
-
-    // Filme
-    btnFilme.addEventListener("click", async () => {
-      errorMsg.textContent = "";
-      output.textContent = "";
-      const lang = languageSelect.value;
-      const coluna = colunaInput.value.trim();
-      try {
-        let id = tmdbInput.value.trim();
-        const nome = tmdbNameInput.value.trim();
-        if (!id && nome) id = await procurarId(nome, "movie", lang);
-        if (!id) throw new Error("Digite o ID ou nome do filme.");
-        const data = await buscarFilme(id, lang);
-        const jsonFilme = {
-          id: id,
-          nome: data.title || "",
-          titulo_original: data.original_title || "",
-          genero: traduzirGeneros(data.genres),
-          descricao: data.overview || "",
-          ano: (data.release_date || "").slice(0,4),
-          status: statusMap[data.status] || data.status || "",
-          pais: (data.production_countries && data.production_countries.length > 0) ? data.production_countries[0].iso_3166_1 : "",
-          duracao: data.runtime?.toString() || "",
-          classificacao: traduzirClassificacao(data.adult || false),
-          popularidade: data.popularity?.toFixed(4) || "",
-          capa: data.poster_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.poster_path}` : "",
-          banner: data.backdrop_path ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}` : "",
-          tmdb_id: id,
-          imdb_id: data.imdb_id || "",
-          data_criacao: data.release_date || "",
-          data_atualizacao: new Date().toISOString(),
-          coluna: coluna,
-          linguagem: data.original_language || "",
-          qualidade: "HD"
-        };
-        mostrarJSON(jsonFilme);
-      } catch(err) { errorMsg.textContent = err.message; }
-    });
-
-    // Copiar JSON
-    document.getElementById("copyBtn").addEventListener("click", () => {
-      if (!output.textContent) return;
-      navigator.clipboard.writeText(output.textContent).then(() => {
-        alert("JSON copiado!");
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        }
       });
-    });
 
-    // Baixar JSON
-    document.getElementById("downloadBtn").addEventListener("click", () => {
-      if (!output.textContent) return;
-      const blob = new Blob([output.textContent], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "dados.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    });
+      const data = await res.json();
+
+      const serie = {
+        id: "",
+        nome: data.name || "",
+        titulo_original: data.original_name || "",
+        genero: data.genres?.map(g => g.name).join(", ") || "",
+        descricao: data.overview || "",
+        ano: data.first_air_date ? data.first_air_date.split("-")[0] : "",
+        status: data.status || "",
+        pais: data.origin_country?.join(", ") || "",
+        duracao_episodio: data.episode_run_time?.[0] || "",
+        classificacao: "+",
+        popularidade: data.popularity || "",
+        trailer: "", 
+        capa: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : "",
+        banner: data.backdrop_path ? `https://image.tmdb.org/t/p/w780${data.backdrop_path}` : "",
+        logo: "",
+        thumbnail: "",
+        tmdb_id: data.id,
+        imdb_id: data.external_ids?.imdb_id || "",
+        data_criacao: new Date().toISOString(),
+        data_atualizacao: new Date().toISOString(),
+        coluna: "",
+        linguagem: "ja",
+        msg: "",
+        qualidade: ""
+      };
+
+      renderSerie(serie);
+    }
+
+    function renderSerie(serie) {
+      document.getElementById("banner").style.backgroundImage = `url(${serie.banner})`;
+      document.getElementById("titulo").textContent = serie.nome;
+      document.getElementById("capa").src = serie.capa;
+      document.getElementById("tituloOriginal").textContent = serie.titulo_original;
+      document.getElementById("genero").textContent = serie.genero;
+      document.getElementById("ano").textContent = serie.ano;
+      document.getElementById("status").textContent = serie.status;
+      document.getElementById("pais").textContent = serie.pais;
+      document.getElementById("duracao").textContent = serie.duracao_episodio;
+      document.getElementById("popularidade").textContent = serie.popularidade;
+      document.getElementById("descricao").textContent = serie.descricao;
+
+      document.getElementById("json").textContent = JSON.stringify(serie, null, 2);
+    }
+
+    // Teste: Game of Thrones (ID = 1399)
+    fetchSerie(1399);
   </script>
+
 </body>
 </html>
