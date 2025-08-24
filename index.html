@@ -21,9 +21,6 @@ textarea { height: 300px; font-family: monospace; }
 <label>Digite o TMDb ID da Série:</label>
 <input type="text" id="serieId" placeholder="Ex: 31132">
 
-<label>Coluna personalizada:</label>
-<input type="text" id="coluna" placeholder="Ex: lançamentos">
-
 <label>Sua API Key TMDb v3:</label>
 <input type="text" id="apiKey" placeholder="Ex: abc123xyz...">
 
@@ -35,12 +32,12 @@ textarea { height: 300px; font-family: monospace; }
 <script>
 async function gerarTodasTemporadas() {
   const serieId = document.getElementById("serieId").value.trim();
-  const coluna = document.getElementById("coluna").value.trim();
   const apiKey = document.getElementById("apiKey").value.trim();
 
   if (!serieId || !apiKey) return alert("Preencha todos os campos!");
 
   try {
+    // Pega dados da série para listar temporadas
     const serieUrl = `https://api.themoviedb.org/3/tv/${serieId}?api_key=${apiKey}&language=pt-BR`;
     const serieRes = await fetch(serieUrl);
     if (!serieRes.ok) throw new Error("Erro ao buscar série");
@@ -68,8 +65,7 @@ async function gerarTodasTemporadas() {
         total_episodios: data.episodes?.length || 0,
         tmdb_id: `${serieId}-${season.season_number}`,
         data_criacao: data.air_date || new Date().toISOString(),
-        data_atualizacao: new Date().toISOString(),
-        coluna: coluna
+        data_atualizacao: new Date().toISOString()
       };
 
       temporadasJSON.push(temporadaJSON);
