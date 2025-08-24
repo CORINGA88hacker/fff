@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gerador JSON Todas Temporadas</title>
+<title>Gerador JSON Temporadas</title>
 <style>
-body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; }
+body { font-family: Arial, sans-serif; background: #121212; color: #fff; padding: 20px; }
 label { display: block; margin-top: 10px; }
 input, textarea, button { margin-top: 5px; padding: 10px; border-radius: 5px; border: none; width: 100%; box-sizing: border-box; }
 input, textarea { background: #222; color: #fff; }
@@ -21,37 +21,33 @@ textarea { height: 300px; font-family: monospace; }
 <label>Digite o TMDb ID da Série:</label>
 <input type="text" id="serieId" placeholder="Ex: 31132">
 
-<label>Sua API Key TMDb v3:</label>
-<input type="text" id="apiKey" placeholder="Ex: abc123xyz...">
-
 <button onclick="gerarTodasTemporadas()">Gerar JSON</button>
 
 <textarea id="jsonOutput" readonly placeholder="O JSON aparecerá aqui..."></textarea>
 <button onclick="copiarJSON()">📋 Copiar JSON</button>
 
 <script>
+const TMDB_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiZjZhMGEzMjhmOWY2NzY5MzZmNDBiZjRmYmIyY2U5YSIsIm5iZiI6MTY4MjcwODQzNi44NTY5OTk5LCJzdWIiOiI2NDRjMTdkNDUxYTY0ZTA4OGFkZDY4MmEiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.k4rE_75eOyG6BWcYCAa2sbcGHVpsX9UTH4Y5NVoQ0L4";
+
 async function gerarTodasTemporadas() {
   const serieId = document.getElementById("serieId").value.trim();
-  const apiKey = document.getElementById("apiKey").value.trim();
-
-  if (!serieId || !apiKey) return alert("Preencha todos os campos!");
+  if (!serieId) return alert("Digite o TMDb ID da série!");
 
   try {
     // Pega dados da série para listar temporadas
-    const serieUrl = `https://api.themoviedb.org/3/tv/${serieId}?api_key=${apiKey}&language=pt-BR`;
-    const serieRes = await fetch(serieUrl);
+    const serieUrl = `https://api.themoviedb.org/3/tv/${serieId}?language=pt-BR`;
+    const serieRes = await fetch(serieUrl, {
+      headers: { Authorization: `Bearer ${TMDB_TOKEN}` }
+    });
     if (!serieRes.ok) throw new Error("Erro ao buscar série");
     const serieData = await serieRes.json();
 
     const temporadasJSON = [];
 
     for (const season of serieData.seasons.filter(s => s.season_number > 0)) {
-      const seasonUrl = `https://api.themoviedb.org/3/tv/${serieId}/season/${season.season_number}?api_key=${apiKey}&language=pt-BR`;
-      const seasonRes = await fetch(seasonUrl);
-      if (!seasonRes.ok) {
-        console.warn(`Não foi possível buscar temporada ${season.season_number}`);
-        continue;
-      }
+      const seasonUrl = `https://api.themoviedb.org/3/tv/${serieId}/season/${season.season_number}?language=pt-BR`;
+      const seasonRes = await fetch(seasonUrl, { headers: { Authorization: `Bearer ${TMDB_TOKEN}` } });
+      if (!seasonRes.ok) continue;
       const data = await seasonRes.json();
 
       const temporadaJSON = {
