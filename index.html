@@ -6,29 +6,28 @@
   <title>Gerador de JSON Séries</title>
   <style>
     body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; }
-    input, textarea, button { margin: 8px 0; padding: 8px; border-radius: 5px; border: none; width: 100%; }
+    label { display: block; margin-top: 10px; }
+    input, textarea, button { margin-top: 5px; padding: 10px; border-radius: 5px; border: none; width: 100%; box-sizing: border-box; }
     input, textarea { background: #222; color: #fff; }
     button { background: #e50914; color: #fff; font-weight: bold; cursor: pointer; }
     button:hover { background: #b00610; }
-    textarea { height: 200px; }
-    .row { display: flex; gap: 10px; }
-    .row input { flex: 1; }
+    textarea { height: 200px; font-family: monospace; }
   </style>
 </head>
 <body>
 
   <h2>Gerador de JSON Séries</h2>
 
-  <div class="row">
-    <input type="text" id="serieId" placeholder="Digite o ID da série no TMDb">
-    <button onclick="buscarSerie()">Buscar Série</button>
-  </div>
+  <label>Digite o TMDB ID da Série:</label>
+  <input type="text" id="serieId" placeholder="Ex: 1399 (Game of Thrones)">
 
-  <input type="text" id="coluna" placeholder="Coluna personalizada (ex: lançamentos)">
+  <label>Coluna personalizada:</label>
+  <input type="text" id="coluna" placeholder="Ex: lançamentos">
 
-  <textarea id="jsonOutput" readonly></textarea>
-
+  <button onclick="buscarSerie()">Buscar Série</button>
   <button onclick="copiarJSON()">📋 Copiar JSON</button>
+
+  <textarea id="jsonOutput" readonly placeholder="O JSON aparecerá aqui..."></textarea>
 
   <script>
     const token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiZjZhMGEzMjhmOWY2NzY5MzZmNDBiZjRmYmIyY2U5YSIsIm5iZiI6MTY4MjcwODQzNi44NTY5OTk5LCJzdWIiOiI2NDRjMTdkNDUxYTY0ZTA4OGFkZDY4MmEiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.k4rE_75eOyG6BWcYCAa2sbcGHVpsX9UTH4Y5NVoQ0L4";
@@ -36,10 +35,10 @@
     async function buscarSerie() {
       const id = document.getElementById("serieId").value.trim();
       const coluna = document.getElementById("coluna").value.trim();
-      if (!id) return alert("Digite um ID!");
+      if (!id) return alert("Digite o TMDB ID!");
 
       try {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?language=pt-BR`, {
+        const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?language=pt-BR&append_to_response=external_ids`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!res.ok) throw new Error("Erro ao buscar dados da série");
@@ -87,5 +86,6 @@
       alert("JSON copiado!");
     }
   </script>
+
 </body>
 </html>
