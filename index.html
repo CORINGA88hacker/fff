@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gerador JSON Temporada</title>
+<title>Gerador JSON Todas Temporadas</title>
 <style>
 body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; }
 label { display: block; margin-top: 10px; }
@@ -11,18 +11,15 @@ input, textarea, button { margin-top: 5px; padding: 10px; border-radius: 5px; bo
 input, textarea { background: #222; color: #fff; }
 button { background: #e50914; color: #fff; font-weight: bold; cursor: pointer; }
 button:hover { background: #b00610; }
-textarea { height: 250px; font-family: monospace; }
+textarea { height: 300px; font-family: monospace; }
 </style>
 </head>
 <body>
 
-<h2>Gerador JSON Temporada</h2>
+<h2>Gerador JSON - Todas Temporadas</h2>
 
-<label>Digite o TMDB ID da Série:</label>
+<label>Digite o TMDb ID da Série:</label>
 <input type="text" id="serieId" placeholder="Ex: 31132">
-
-<label>Número da Temporada:</label>
-<input type="number" id="seasonNumber" placeholder="Ex: 1">
 
 <label>Coluna personalizada:</label>
 <input type="text" id="coluna" placeholder="Ex: lançamentos">
@@ -30,44 +27,57 @@ textarea { height: 250px; font-family: monospace; }
 <label>Sua API Key TMDb v3:</label>
 <input type="text" id="apiKey" placeholder="Ex: abc123xyz...">
 
-<button onclick="gerarTemporadaJSON()">Gerar JSON da Temporada</button>
+<button onclick="gerarTodasTemporadas()">Gerar JSON</button>
 
 <textarea id="jsonOutput" readonly placeholder="O JSON aparecerá aqui..."></textarea>
 <button onclick="copiarJSON()">📋 Copiar JSON</button>
 
 <script>
-async function gerarTemporadaJSON() {
+async function gerarTodasTemporadas() {
   const serieId = document.getElementById("serieId").value.trim();
-  const seasonNumber = document.getElementById("seasonNumber").value.trim();
   const coluna = document.getElementById("coluna").value.trim();
   const apiKey = document.getElementById("apiKey").value.trim();
 
-  if (!serieId || !seasonNumber || !apiKey) return alert("Preencha todos os campos!");
+  if (!serieId || !apiKey) return alert("Preencha todos os campos!");
 
   try {
-    const url = `https://api.themoviedb.org/3/tv/${serieId}/season/${seasonNumber}?api_key=${apiKey}&language=pt-BR`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Erro ao buscar API TMDb");
-    const data = await res.json();
+    const serieUrl = `https://api.themoviedb.org/3/tv/${serieId}?api_key=${apiKey}&language=pt-BR`;
+    const serieRes = await fetch(serieUrl);
+    if (!serieRes.ok) throw new Error("Erro ao buscar série");
+    const serieData = await serieRes.json();
 
-    const json = {
-      id: `${serieId}-${seasonNumber}`,
-      nome: data.name || `Temporada ${seasonNumber}`,
-      numero: data.season_number,
-      descricao: data.overview || "Sem descrição",
-      ano: data.air_date ? data.air_date.split("-")[0] : "",
-      capa: data.poster_path ? "https://image.tmdb.org/t/p/w500" + data.poster_path : "",
-      anime_id: serieId,
-      total_episodios: data.episodes?.length || 0,
-      tmdb_id: `${serieId}-${seasonNumber}`,
-      data_criacao: data.air_date || new Date().toISOString(),
-      data_atualizacao: new Date().toISOString(),
-      coluna: coluna
-    };
+    const temporadasJSON = [];
 
-    document.getElementById("jsonOutput").value = JSON.stringify(json, null, 2);
+    for (const season of serieData.seasons.filter(s => s.season_number > 0)) {
+      const seasonUrl = `https://api.themoviedb.org/3/tv/${serieId}/season/${season.season_number}?api_key=${apiKey}&language=pt-BR`;
+      const seasonRes = await fetch(seasonUrl);
+      if (!seasonRes.ok) {
+        console.warn(`Não foi possível buscar temporada ${season.season_number}`);
+        continue;
+      }
+      const data = await seasonRes.json();
 
-  } catch(err) {
+      const temporadaJSON = {
+        id: `${serieId}-${season.season_number}`,
+        nome: data.name || `Temporada ${season.season_number}`,
+        numero: data.season_number,
+        descricao: data.overview || "Sem descrição",
+        ano: data.air_date ? data.air_date.split("-")[0] : "",
+        capa: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : "",
+        anime_id: serieId,
+        total_episodios: data.episodes?.length || 0,
+        tmdb_id: `${serieId}-${season.season_number}`,
+        data_criacao: data.air_date || new Date().toISOString(),
+        data_atualizacao: new Date().toISOString(),
+        coluna: coluna
+      };
+
+      temporadasJSON.push(temporadaJSON);
+    }
+
+    document.getElementById("jsonOutput").value = JSON.stringify(temporadasJSON, null, 2);
+
+  } catch (err) {
     alert("Erro: " + err.message);
   }
 }
