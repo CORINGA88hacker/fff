@@ -18,6 +18,9 @@
 <body>
   <h2>Gerador JSON - TMDb (Séries & Filmes)</h2>
 
+  <label>API Key (TMDb):</label>
+  <input type="text" id="apiKeyInput" placeholder="Digite sua API Key TMDb">
+
   <label>TMDb ID:</label>
   <input type="text" id="tmdbInput" placeholder="Digite o ID do TMDb">
 
@@ -38,11 +41,15 @@
     <button type="button" id="btnFilme">Extrair JSON do Filme</button>
   </div>
 
+  <div class="row">
+    <button type="button" id="copyBtn">Copiar JSON</button>
+    <button type="button" id="downloadBtn">Baixar JSON</button>
+  </div>
+
   <p id="errorMsg"></p>
   <textarea id="output" readonly></textarea>
 
   <script>
-    const apiKey = "SUA_API_KEY_TMDB_AQUI"; // coloque sua TMDb API Key
     const tmdbInput = document.getElementById("tmdbInput");
     const tmdbNameInput = document.getElementById("tmdbNameInput");
     const languageSelect = document.getElementById("languageSelect");
@@ -61,6 +68,10 @@
       "Released": "Lançado"
     };
 
+    function getApiKey() {
+      return document.getElementById("apiKeyInput").value.trim();
+    }
+
     function traduzirGeneros(genres) {
       if (!genres) return [];
       return genres.map(g => g.name);
@@ -71,7 +82,9 @@
     }
 
     async function fetchJSON(url) {
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" }});
+      const key = getApiKey();
+      if (!key) throw new Error("Digite sua API Key TMDb.");
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }});
       if (!res.ok) throw new Error("Erro ao buscar dados da API TMDb");
       return await res.json();
     }
@@ -85,9 +98,17 @@
     }
 
     async function procurarId(nome, tipo, lang) {
-      const url = `https://api.themoviedb.org/3/search/${tipo}?query=${encodeURIComponent(nome)}&language=${lang}`;
-      const data = await fetchJSON(url);
+      let url = `https://api.themoviedb.org/3/search/${tipo}?query=${encodeURIComponent(nome)}&language=${lang}`;
+      let data = await fetchJSON(url);
       if (data.results && data.results.length > 0) return data.results[0].id;
+
+      // fallback en-US
+      if (lang !== "en-US") {
+        url = `https://api.themoviedb.org/3/search/${tipo}?query=${encodeURIComponent(nome)}&language=en-US`;
+        data = await fetchJSON(url);
+        if (data.results && data.results.length > 0) return data.results[0].id;
+      }
+
       throw new Error(`${tipo === "tv" ? "Série" : "Filme"} não encontrado.`);
     }
 
@@ -116,10 +137,10 @@
           descricao: data.overview || "",
           ano: (data.first_air_date || "").slice(0,4),
           status: statusMap[data.status] || data.status || "",
-          pais: data.origin_country?.[0] || "",
+          pais: (data.origin_country && data.origin_country.length > 0) ? data.origin_country[0] : "",
           temporadas: data.number_of_seasons || 0,
           episodios: data.number_of_episodes || 0,
-          classificacao: traduzirClassificacao(data.adult),
+          classificacao: traduzirClassificacao(data.adult || false),
           popularidade: data.popularity?.toFixed(4) || "",
           capa: data.poster_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.poster_path}` : "",
           banner: data.backdrop_path ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}` : "",
@@ -154,9 +175,9 @@
           descricao: data.overview || "",
           ano: (data.release_date || "").slice(0,4),
           status: statusMap[data.status] || data.status || "",
-          pais: data.origin_country?.[0] || "",
+          pais: (data.production_countries && data.production_countries.length > 0) ? data.production_countries[0].iso_3166_1 : "",
           duracao: data.runtime?.toString() || "",
-          classificacao: traduzirClassificacao(data.adult),
+          classificacao: traduzirClassificacao(data.adult || false),
           popularidade: data.popularity?.toFixed(4) || "",
           capa: data.poster_path ? `https://image.tmdb.org/t/p/w600_and_h900_bestv2${data.poster_path}` : "",
           banner: data.backdrop_path ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}` : "",
@@ -170,6 +191,26 @@
         };
         mostrarJSON(jsonFilme);
       } catch(err) { errorMsg.textContent = err.message; }
+    });
+
+    // Copiar JSON
+    document.getElementById("copyBtn").addEventListener("click", () => {
+      if (!output.textContent) return;
+      navigator.clipboard.writeText(output.textContent).then(() => {
+        alert("JSON copiado!");
+      });
+    });
+
+    // Baixar JSON
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      if (!output.textContent) return;
+      const blob = new Blob([output.textContent], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "dados.json";
+      a.click();
+      URL.revokeObjectURL(url);
     });
   </script>
 </body>
