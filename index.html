@@ -24,6 +24,9 @@ textarea { height: 250px; font-family: monospace; }
 <label>Coluna personalizada:</label>
 <input type="text" id="coluna" placeholder="Ex: lançamentos">
 
+<label>Digite sua API Key TMDb v3:</label>
+<input type="text" id="apiKey" placeholder="Ex: abc123xyz...">
+
 <button onclick="buscarSerie()">Buscar Série</button>
 <button onclick="gerarTodasTemporadasJSON()">Gerar JSON de Todas as Temporadas</button>
 
@@ -31,23 +34,22 @@ textarea { height: 250px; font-family: monospace; }
 <button onclick="copiarJSON()">📋 Copiar JSON</button>
 
 <script>
-const token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiZjZhMGEzMjhmOWY2NzY5MzZmNDBiZjRmYmIyY2U5YSIsIm5iOiI2NDRjMTdkNDUxYTY0ZTA4OGFkZDY4MmEiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.k4rE_75eOyG6BWcYCAa2sbcGHVpsX9UTH4Y5NVoQ0L4";
 let serieData = null;
 
 async function fetchJSON(url) {
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Erro ao buscar API TMDb");
   return res.json();
 }
 
 async function buscarSerie() {
   const id = document.getElementById("serieId").value.trim();
+  const apiKey = document.getElementById("apiKey").value.trim();
   if (!id) return alert("Digite o TMDB ID da série!");
+  if (!apiKey) return alert("Digite sua API Key TMDb!");
 
   try {
-    const data = await fetchJSON(`https://api.themoviedb.org/3/tv/${id}?language=pt-BR`);
+    const data = await fetchJSON(`https://api.themoviedb.org/3/tv/${id}?api_key=${apiKey}&language=pt-BR`);
     serieData = data;
     alert(`Série "${data.name}" carregada! Clique em "Gerar JSON de Todas as Temporadas".`);
   } catch(err) {
