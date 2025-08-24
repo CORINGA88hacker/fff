@@ -1,91 +1,111 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gerador de JSON Séries</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; }
-    label { display: block; margin-top: 10px; }
-    input, textarea, button { margin-top: 5px; padding: 10px; border-radius: 5px; border: none; width: 100%; box-sizing: border-box; }
-    input, textarea { background: #222; color: #fff; }
-    button { background: #e50914; color: #fff; font-weight: bold; cursor: pointer; }
-    button:hover { background: #b00610; }
-    textarea { height: 200px; font-family: monospace; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador JSON Temporadas</title>
+<style>
+body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; }
+label { display: block; margin-top: 10px; }
+input, textarea, button, select { margin-top: 5px; padding: 10px; border-radius: 5px; border: none; width: 100%; box-sizing: border-box; }
+input, textarea, select { background: #222; color: #fff; }
+button { background: #e50914; color: #fff; font-weight: bold; cursor: pointer; }
+button:hover { background: #b00610; }
+textarea { height: 250px; font-family: monospace; }
+</style>
 </head>
 <body>
 
-  <h2>Gerador de JSON Séries</h2>
+<h2>Gerador JSON Temporadas</h2>
 
-  <label>Digite o TMDB ID da Série:</label>
-  <input type="text" id="serieId" placeholder="Ex: 1399 (Game of Thrones)">
+<label>Digite o TMDB ID da Série:</label>
+<input type="text" id="serieId" placeholder="Ex: 31132">
 
-  <label>Coluna personalizada:</label>
-  <input type="text" id="coluna" placeholder="Ex: lançamentos">
+<label>Coluna personalizada:</label>
+<input type="text" id="coluna" placeholder="Ex: lançamentos">
 
-  <button onclick="buscarSerie()">Buscar Série</button>
-  <button onclick="copiarJSON()">📋 Copiar JSON</button>
+<button onclick="buscarSerie()">Buscar Série</button>
 
-  <textarea id="jsonOutput" readonly placeholder="O JSON aparecerá aqui..."></textarea>
+<label>Selecione a Temporada:</label>
+<select id="temporadaSelect">
+  <option value="">-- Escolha uma temporada --</option>
+</select>
+<button onclick="gerarTemporadaJSON()">Gerar JSON da Temporada</button>
 
-  <script>
-    const token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiZjZhMGEzMjhmOWY2NzY5MzZmNDBiZjRmYmIyY2U5YSIsIm5iZiI6MTY4MjcwODQzNi44NTY5OTk5LCJzdWIiOiI2NDRjMTdkNDUxYTY0ZTA4OGFkZDY4MmEiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.k4rE_75eOyG6BWcYCAa2sbcGHVpsX9UTH4Y5NVoQ0L4";
+<textarea id="jsonOutput" readonly placeholder="O JSON aparecerá aqui..."></textarea>
+<button onclick="copiarJSON()">📋 Copiar JSON</button>
 
-    async function buscarSerie() {
-      const id = document.getElementById("serieId").value.trim();
-      const coluna = document.getElementById("coluna").value.trim();
-      if (!id) return alert("Digite o TMDB ID!");
+<script>
+const token = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJiZjZhMGEzMjhmOWY2NzY5MzZmNDBiZjRmYmIyY2U5YSIsIm5iOiI2NDRjMTdkNDUxYTY0ZTA4OGFkZDY4MmEiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.k4rE_75eOyG6BWcYCAa2sbcGHVpsX9UTH4Y5NVoQ0L4";
+let serieData = null;
 
-      try {
-        const res = await fetch(`https://api.themoviedb.org/3/tv/${id}?language=pt-BR&append_to_response=external_ids`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error("Erro ao buscar dados da série");
-        const data = await res.json();
+async function fetchJSON(url) {
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) throw new Error("Erro ao buscar API");
+  return res.json();
+}
 
-        const json = {
-          id: data.id || "",
-          nome: data.name || "",
-          titulo_original: data.original_name || "",
-          genero: data.genres?.map(g => g.name).join(", ") || "",
-          descricao: data.overview || "",
-          ano: data.first_air_date ? data.first_air_date.split("-")[0] : "",
-          status: data.status || "",
-          pais: data.origin_country?.join(", ") || "",
-          duracao_episodio: data.episode_run_time?.[0] || "",
-          classificacao: "+",
-          popularidade: data.popularity || "",
-          trailer: "",
-          capa: data.poster_path ? "https://image.tmdb.org/t/p/w500" + data.poster_path : "",
-          banner: data.backdrop_path ? "https://image.tmdb.org/t/p/w1280" + data.backdrop_path : "",
-          logo: "",
-          thumbnail: "",
-          tmdb_id: data.id || "",
-          imdb_id: data.external_ids?.imdb_id || "",
-          data_criacao: new Date().toISOString(),
-          data_atualizacao: new Date().toISOString(),
-          coluna: coluna || "",
-          linguagem: data.original_language || "",
-          msg: "",
-          qualidade: ""
-        };
+async function buscarSerie() {
+  const id = document.getElementById("serieId").value.trim();
+  if (!id) return alert("Digite o TMDB ID da série!");
 
-        document.getElementById("jsonOutput").value = JSON.stringify(json, null, 2);
+  try {
+    const data = await fetchJSON(`https://api.themoviedb.org/3/tv/${id}?language=pt-BR`);
+    serieData = data;
 
-      } catch (err) {
-        alert("Erro: " + err.message);
-      }
-    }
+    // Preenche select de temporadas
+    const select = document.getElementById("temporadaSelect");
+    select.innerHTML = '<option value="">-- Escolha uma temporada --</option>';
+    data.seasons.forEach(season => {
+      select.innerHTML += `<option value="${season.season_number}">${season.name}</option>`;
+    });
 
-    function copiarJSON() {
-      const output = document.getElementById("jsonOutput");
-      if (!output.value) return alert("Nada para copiar!");
-      output.select();
-      document.execCommand("copy");
-      alert("JSON copiado!");
-    }
-  </script>
+    alert(`Série "${data.name}" carregada! Selecione a temporada.`);
+  } catch(err) {
+    alert("Erro: " + err.message);
+  }
+}
+
+async function gerarTemporadaJSON() {
+  if (!serieData) return alert("Busque a série primeiro!");
+  const seasonNumber = document.getElementById("temporadaSelect").value;
+  if (!seasonNumber) return alert("Selecione uma temporada!");
+
+  const coluna = document.getElementById("coluna").value || "";
+
+  try {
+    const data = await fetchJSON(`https://api.themoviedb.org/3/tv/${serieData.id}/season/${seasonNumber}?language=pt-BR`);
+    
+    const json = {
+      id: `${serieData.id}-${seasonNumber}`,
+      nome: data.name || `Temporada ${seasonNumber}`,
+      numero: data.season_number,
+      descricao: data.overview || "Sem descrição",
+      ano: data.air_date ? data.air_date.split("-")[0] : "",
+      capa: data.poster_path ? "https://image.tmdb.org/t/p/w500" + data.poster_path : "",
+      anime_id: serieData.id,
+      total_episodios: data.episodes?.length || 0,
+      tmdb_id: `${serieData.id}-${seasonNumber}`,
+      data_criacao: data.air_date || new Date().toISOString(),
+      data_atualizacao: new Date().toISOString(),
+      coluna: coluna
+    };
+
+    document.getElementById("jsonOutput").value = JSON.stringify(json, null, 2);
+
+  } catch(err) {
+    alert("Erro: " + err.message);
+  }
+}
+
+function copiarJSON() {
+  const output = document.getElementById("jsonOutput");
+  if (!output.value) return alert("Nada para copiar!");
+  output.select();
+  document.execCommand("copy");
+  alert("JSON copiado!");
+}
+</script>
 
 </body>
 </html>
