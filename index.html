@@ -134,9 +134,9 @@ function atualizarFavoritosContagem(){favoritesCountEl.textContent=`Favoritos: $
 
 async function carregarDados(){
 const [resA,resE,resT]=await Promise.all([
-fetch('https://anime-aniverso.vercel.app/animes.json'),
-fetch('https://anime-aniverso.vercel.app/episodios.json'),
-fetch('https://anime-aniverso.vercel.app/temporadas.json')]);
+fetch('https://anime-aniverso.vercel.app/Api/animes'),
+fetch('https://anime-aniverso.vercel.app/Api/episodios'),
+fetch('https://anime-aniverso.vercel.app/Api/temporadas')]);
 animes=await resA.json();
 episodios=await resE.json();
 temporadas=await resT.json();
