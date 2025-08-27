@@ -8,21 +8,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Open Sans',sans-serif;background:#141414;color:#fff;}
+body{font-family:'Open Sans',sans-serif;background:#141414;color:#fff;line-height:1.4;}
 a{text-decoration:none;color:inherit;}
 button{font-family:inherit;cursor:pointer;}
 ul{list-style:none;}
 
 /* HEADER */
 header{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;background:linear-gradient(to bottom,#000,transparent);}
-header h1{font-family:'Bebas Neue',sans-serif;font-size:48px;color:#e50914;letter-spacing:2px;margin-bottom:10px;}
+header h1{font-family:'Bebas Neue',sans-serif;font-size:42px;color:#e50914;letter-spacing:2px;margin-bottom:10px;}
+#tab-buttons{margin-top:10px;}
 #tab-buttons button{margin:0 5px;padding:8px 12px;background:#e50914;color:#fff;border:none;border-radius:4px;transition:.3s;}
 #tab-buttons button.active,#tab-buttons button:hover{background:#f40612;}
 
 /* SEARCH */
 #search-container{text-align:center;margin:15px;}
-#search-input,#filter-year{padding:10px;font-size:16px;border-radius:4px;border:none;}
-#filter-year{margin-left:5px;}
+#search-input,#filter-year{padding:10px;font-size:16px;border-radius:4px;border:none;margin:3px 0;}
 #clear-btn{padding:10px 15px;margin-left:5px;background:#e50914;color:#fff;border:none;border-radius:4px;transition:.3s;}
 #clear-btn:hover{background:#f40612;}
 #counter,#favorites-count{text-align:center;margin:5px 0;font-size:16px;font-weight:bold;}
@@ -108,6 +108,7 @@ form[method="dialog"]{margin-top:15px;text-align:right;}
 <div id="toast"></div>
 
 <script>
+/* ----------------------------- VARIÁVEIS ----------------------------- */
 const animeListEl=document.getElementById('anime-list');
 const counterEl=document.getElementById('counter');
 const favoritesCountEl=document.getElementById('favorites-count');
@@ -128,103 +129,144 @@ const favTab=document.getElementById('fav-tab');
 const prevBtn=document.getElementById('prev-anime');
 const nextBtn=document.getElementById('next-anime');
 
-let animes=[],episodios=[],temporadas=[],animeAtual=null,favoritos=JSON.parse(localStorage.getItem("favoritos"))||[],vistos=JSON.parse(localStorage.getItem("vistos"))||[],animeIndex=0,displayedList=[];
+let animes=[],episodios=[],temporadas=[],animeAtual=null;
+let favoritos=JSON.parse(localStorage.getItem("favoritos"))||[];
+let vistos=JSON.parse(localStorage.getItem("vistos"))||[];
+let animeIndex=0,displayedList=[];
 
+/* ----------------------------- FUNÇÕES ----------------------------- */
 function atualizarFavoritosContagem(){favoritesCountEl.textContent=`Favoritos: ${favoritos.length}`;}
 
 async function carregarDados(){
-const [resA,resE,resT]=await Promise.all([
-fetch('https://anime-aniverso.vercel.app/Api/animes'),
-fetch('https://anime-aniverso.vercel.app/Api/episodios'),
-fetch('https://anime-aniverso.vercel.app/Api/temporadas')]);
-animes=await resA.json();
-episodios=await resE.json();
-temporadas=await resT.json();
-preencherFiltroAno();
-aplicarFiltros();
+    try {
+        const [resA,resE,resT]=await Promise.all([
+            fetch('https://anime-aniverso.vercel.app/Api/animes'),
+            fetch('https://anime-aniverso.vercel.app/Api/episodios'),
+            fetch('https://anime-aniverso.vercel.app/Api/temporadas')
+        ]);
+        animes=await resA.json();
+        episodios=await resE.json();
+        temporadas=await resT.json();
+        preencherFiltroAno();
+        aplicarFiltros();
+    } catch(e) { console.error("Erro ao carregar dados:",e); mostrarToast("❌ Erro ao carregar dados"); }
 }
 
 function preencherFiltroAno(){
-const anos=[...new Set(animes.map(a=>a.ano).filter(Boolean))].sort((a,b)=>b-a);
-anos.forEach(ano=>{const opt=document.createElement("option");opt.value=ano;opt.textContent=ano;filterYear.appendChild(opt);});
+    const anos=[...new Set(animes.map(a=>a.ano).filter(Boolean))].sort((a,b)=>b-a);
+    anos.forEach(ano=>{
+        const opt=document.createElement("option");
+        opt.value=ano;
+        opt.textContent=ano;
+        filterYear.appendChild(opt);
+    });
 }
 
 function normalizar(txt){return txt?txt.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase():"";}
 
 function aplicarFiltros(){
-const termo=normalizar(searchInput.value.trim());
-const ano=filterYear.value;
-let lista=animes.filter(a=>(!termo||normalizar(a.nome).includes(termo)||String(a.id).includes(termo))&&(!ano||String(a.ano)===ano));
-if(favTab.classList.contains("active")) lista=lista.filter(a=>favoritos.includes(a.id));
-displayedList=lista; animeIndex=0;
-exibirAnimes(lista,true);
+    const termo=normalizar(searchInput.value.trim());
+    const ano=filterYear.value;
+    let lista=animes.filter(a=>(!termo||normalizar(a.nome).includes(termo)||String(a.id).includes(termo))&&(!ano||String(a.ano)===ano));
+    if(favTab.classList.contains("active")) lista=lista.filter(a=>favoritos.includes(a.id));
+    displayedList=lista; animeIndex=0;
+    exibirAnimes(lista,true);
 }
 
-function exibirAnimes(lista,scroll=false){
-if(!lista.length){animeListEl.innerHTML=`<p style="text-align:center">⚠ Nenhum anime encontrado.</p>`;counterEl.textContent="Total: 0 animes";return;}
-animeListEl.innerHTML='';
-const fragment=document.createDocumentFragment();
-lista.forEach((anime,i)=>{
-const card=document.createElement('div'); card.className='anime-card';
-let nomeHtml=anime.nome;
-const termo=normalizar(searchInput.value.trim());
-if(termo){const regex=new RegExp(`(${termo})`,"gi"); nomeHtml=nomeHtml.replace(regex,'<span class="highlight">$1</span>');}
-card.innerHTML=`<button class="favorite-btn ${favoritos.includes(anime.id)?"active":""}" title="Favoritar" aria-label="Favoritar anime">❤</button>
-<img loading="lazy" src="${anime.capa}" alt="${anime.nome}">
-<h2>${nomeHtml}</h2>
-<p>ID: ${anime.id}</p>
-<p>${anime.ano||""}</p>`;
-card.querySelector(".favorite-btn").addEventListener("click",e=>{e.stopPropagation();toggleFavorito(anime.id,e.target);});
-card.addEventListener('click',()=>abrirDialogo(anime));
-fragment.appendChild(card);
-});
-animeListEl.appendChild(fragment);
-counterEl.textContent=`Total: ${lista.length} animes`;
-atualizarFavoritosContagem();
+function exibirAnimes(lista){
+    if(!lista.length){animeListEl.innerHTML=`<p style="text-align:center">⚠ Nenhum anime encontrado.</p>`;counterEl.textContent="Total: 0 animes";return;}
+    animeListEl.innerHTML='';
+    const fragment=document.createDocumentFragment();
+    lista.forEach(anime=>{
+        const card=document.createElement('div'); card.className='anime-card';
+        let nomeHtml=anime.nome;
+        const termo=normalizar(searchInput.value.trim());
+        if(termo){const regex=new RegExp(`(${termo})`,"gi"); nomeHtml=nomeHtml.replace(regex,'<span class="highlight">$1</span>');}
+        card.innerHTML=`
+            <button class="favorite-btn ${favoritos.includes(anime.id)?"active":""}" title="Favoritar" aria-label="Favoritar anime">❤</button>
+            <img loading="lazy" src="${anime.capa}" alt="${anime.nome}">
+            <h2>${nomeHtml}</h2>
+            <p>ID: ${anime.id}</p>
+            <p>${anime.ano||""}</p>`;
+        card.querySelector(".favorite-btn").addEventListener("click",e=>{e.stopPropagation();toggleFavorito(anime.id,e.target);});
+        card.addEventListener('click',()=>abrirDialogo(anime));
+        fragment.appendChild(card);
+    });
+    animeListEl.appendChild(fragment);
+    counterEl.textContent=`Total: ${lista.length} animes`;
+    atualizarFavoritosContagem();
 }
 
 function abrirDialogo(anime){
-animeAtual=anime; animeIndex=displayedList.findIndex(a=>a.id===anime.id);
-modalTitle.textContent=anime.nome; modalDesc.textContent=anime.descricao||'Sem descrição';
-modalYear.textContent=`Ano: ${anime.ano||'Desconhecido'}`; dialogCapa.src=anime.capa; dialogCapa.alt=`Capa do anime ${anime.nome}`;
-const seas=temporadas.filter(s=>String(s.anime_id)===String(anime.id));
-modalSeasonCount.textContent=`Temporadas: ${seas.length}`;
-episodeList.innerHTML=''; let totalEps=0;
-seas.forEach(season=>{
-const details=document.createElement('details');
-const summary=document.createElement('summary'); summary.textContent=`${season.nome} (${season.total_episodios||0} eps)`; details.appendChild(summary);
-summary.addEventListener("click",()=>renderEpisodios(details,season.id));
-episodeList.appendChild(details);
-});
-modalEpCount.textContent=`Episódios: ${seas.reduce((acc,s)=>acc+(episodios.filter(ep=>String(ep.temporada_id)===String(s.id))).length,0)}`;
-dialog.showModal(); dialog.focus();
+    animeAtual=anime;
+    animeIndex=displayedList.findIndex(a=>a.id===anime.id);
+    modalTitle.textContent=anime.nome;
+    modalDesc.textContent=anime.descricao||'Sem descrição';
+    modalYear.textContent=`Ano: ${anime.ano||'Desconhecido'}`;
+    dialogCapa.src=anime.capa;
+    dialogCapa.alt=`Capa do anime ${anime.nome}`;
+
+    const seas=temporadas.filter(s=>String(s.anime_id)===String(anime.id));
+    modalSeasonCount.textContent=`Temporadas: ${seas.length}`;
+
+    episodeList.innerHTML='';
+    seas.forEach(season=>{
+        const details=document.createElement('details');
+        const summary=document.createElement('summary');
+        summary.textContent=`${season.nome} (${season.total_episodios||0} eps)`;
+        details.appendChild(summary);
+        summary.addEventListener("click",()=>renderEpisodios(details,season.id));
+        episodeList.appendChild(details);
+    });
+    modalEpCount.textContent=`Episódios: ${seas.reduce((acc,s)=>acc+(episodios.filter(ep=>String(ep.temporada_id)===String(s.id))).length,0)}`;
+    dialog.showModal();
+    dialog.focus();
 }
 
 function renderEpisodios(details,seasonId){
-if(details.dataset.rendered)return; details.dataset.rendered=true;
-const eps=episodios.filter(ep=>String(ep.temporada_id)===String(seasonId));
-eps.forEach(ep=>{
-const li=document.createElement("li"); const epNome=ep.nome||"Sem título"; let links=[];
-if(ep.legendado) links.push(`<a href="${ep.legendado}" target="_blank" rel="noopener noreferrer">Legendado</a>`);
-if(ep.dublado) links.push(`<a href="${ep.dublado}" target="_blank" rel="noopener noreferrer">Dublado</a>`);
-li.innerHTML=`${epNome} ${links.join(" | ")}`;
-if(vistos.includes(ep.id)){const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span);}
-else{const markBtn=document.createElement("button"); markBtn.textContent="✔"; markBtn.style.background="green"; markBtn.style.border="none"; markBtn.style.borderRadius="4px"; markBtn.style.cursor="pointer";
-markBtn.onclick=()=>marcarVisto(ep.id,li); li.appendChild(markBtn);}
-details.appendChild(li);
-});
+    if(details.dataset.rendered)return; details.dataset.rendered=true;
+    const eps=episodios.filter(ep=>String(ep.temporada_id)===String(seasonId));
+    eps.forEach(ep=>{
+        const li=document.createElement("li"); 
+        const epNome=ep.nome||"Sem título"; 
+        let links=[];
+        if(ep.legendado) links.push(`<a href="${ep.legendado}" target="_blank" rel="noopener noreferrer">Legendado</a>`);
+        if(ep.dublado) links.push(`<a href="${ep.dublado}" target="_blank" rel="noopener noreferrer">Dublado</a>`);
+        li.innerHTML=`${epNome} ${links.join(" | ")}`;
+        if(vistos.includes(ep.id)){
+            const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span);
+        } else {
+            const markBtn=document.createElement("button"); 
+            markBtn.textContent="✔"; 
+            markBtn.style.background="green"; markBtn.style.border="none"; markBtn.style.borderRadius="4px"; markBtn.style.cursor="pointer";
+            markBtn.onclick=()=>marcarVisto(ep.id,li); 
+            li.appendChild(markBtn);
+        }
+        details.appendChild(li);
+    });
 }
 
 function toggleFavorito(id,btn){
-if(favoritos.includes(id)){favoritos=favoritos.filter(f=>f!==id);btn.classList.remove("active");mostrarToast("❌ Removido dos favoritos");}
-else{favoritos.push(id);btn.classList.add("active");mostrarToast("❤️ Adicionado aos favoritos");}
-localStorage.setItem("favoritos",JSON.stringify(favoritos)); atualizarFavoritosContagem();
+    if(favoritos.includes(id)){favoritos=favoritos.filter(f=>f!==id);btn.classList.remove("active");mostrarToast("❌ Removido dos favoritos");}
+    else{favoritos.push(id);btn.classList.add("active");mostrarToast("❤️ Adicionado aos favoritos");}
+    localStorage.setItem("favoritos",JSON.stringify(favoritos));
+    atualizarFavoritosContagem();
 }
 
-function marcarVisto(id,li){vistos.push(id); localStorage.setItem("vistos",JSON.stringify(vistos)); li.querySelector("button").remove(); const span=document.createElement("span"); span.textContent="Visto ✅"; span.className="watched"; li.appendChild(span); mostrarToast("👀 Episódio marcado como visto");}
+function marcarVisto(id,li){
+    vistos.push(id); 
+    localStorage.setItem("vistos",JSON.stringify(vistos)); 
+    li.querySelector("button").remove(); 
+    const span=document.createElement("span"); 
+    span.textContent="Visto ✅"; 
+    span.className="watched"; 
+    li.appendChild(span); 
+    mostrarToast("👀 Episódio marcado como visto");
+}
 
 function mostrarToast(msg){toast.textContent=msg; toast.className="show"; setTimeout(()=>toast.className="",2000);}
 
+/* ----------------------------- EVENTOS ----------------------------- */
 prevBtn.addEventListener("click",()=>{if(animeIndex>0)abrirDialogo(displayedList[animeIndex-1]);});
 nextBtn.addEventListener("click",()=>{if(animeIndex<displayedList.length-1)abrirDialogo(displayedList[animeIndex+1]);});
 
