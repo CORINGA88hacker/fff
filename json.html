@@ -83,6 +83,10 @@
       flex: 1;
       min-width: 200px;
     }
+    small {
+      color: #aaa;
+      font-size: 0.85rem;
+    }
   </style>
 </head>
 <body>
@@ -104,8 +108,18 @@
         </select>
       </div>
       <div class="col">
-        <label for="coluna">Coluna (categorias, separado por vírgula):</label>
-        <input type="text" id="coluna" name="coluna" placeholder="ex: Populares, Slider, Clássicos, Temporada, Dublados" />
+        <label for="coluna">Coluna (categorias, múltipla escolha)</label>
+        <select id="coluna" name="coluna" multiple size="8">
+          <option value="Populares">Populares</option>
+          <option value="Slider">Slider</option>
+          <option value="Clássicos">Clássicos</option>
+          <option value="Temporada">Temporada</option>
+          <option value="Dublados">Dublados</option>
+          <option value="Fandublagem">Fandublagem</option>
+          <option value="Previlfandublagem">Previlfandublagem</option>
+          <option value="Esportes">Esportes</option>
+        </select>
+        <small>Segure Ctrl (Windows) ou Cmd (Mac) para selecionar múltiplas opções</small>
       </div>
     </div>
 
@@ -189,7 +203,6 @@
 
     async function garantirIdSerie(tmdbId) {
       try {
-        // Testa se o ID existe como série
         await fetchJSON(`https://api.themoviedb.org/3/tv/${tmdbId}`);
         return tmdbId;
       } catch {
@@ -243,7 +256,7 @@
       errorMsg.textContent = "";
       output.textContent = "";
       const lang = languageSelect.value;
-      const coluna = colunaInput.value.trim();
+      const coluna = Array.from(colunaInput.selectedOptions).map(opt => opt.value);
 
       try {
         const tmdbId = await obterId(lang);
@@ -274,7 +287,7 @@
           imdb_id: imdbId,
           data_criacao: data.first_air_date ? new Date(data.first_air_date).toISOString() : "",
           data_atualizacao: new Date().toISOString(),
-          coluna: coluna,
+          coluna: coluna.join(", "), // string separada por vírgula
           linguagem: data.original_language || "",
           msg: data.tagline || "",
           qualidade: "HD"
@@ -291,7 +304,7 @@
       errorMsg.textContent = "";
       output.textContent = "";
       const lang = languageSelect.value;
-      const coluna = colunaInput.value.trim();
+      const coluna = Array.from(colunaInput.selectedOptions).map(opt => opt.value);
 
       try {
         const tmdbId = await obterId(lang);
@@ -318,7 +331,7 @@
             tmdb_id: `${tmdbId}-${temporada.season_number}`,
             data_criacao: detalhes.air_date ? new Date(detalhes.air_date).toISOString() : "",
             data_atualizacao: new Date().toISOString(),
-            coluna: coluna
+            coluna: coluna.join(", ")
           });
         }
 
